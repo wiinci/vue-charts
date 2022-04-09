@@ -1,7 +1,7 @@
 <script setup>
 import getNodesAndLinks from '@/util/getNodesAndLinks';
-import { sankey } from 'd3-sankey';
-import { computed, unref } from 'vue';
+import { sankey, sankeyJustify, sankeyLeft } from 'd3-sankey';
+import { computed } from 'vue';
 import Chart from '../common/Chart.vue';
 import Labels from './Labels.vue';
 import Links from './Links.vue';
@@ -37,7 +37,10 @@ const props = defineProps({
   },
   nodeId: {
     default: 'id',
-    required: true,
+    type: String,
+  },
+  nodeAlign: {
+    default: 'left',
     type: String,
   },
   sort: {
@@ -48,22 +51,32 @@ const props = defineProps({
 
 const NODE_PADDING = 1e9;
 const NODE_WIDTH = 1e-9;
-const chartHeight = computed(
-  () => props.height - props.marginTop - props.marginBottom
-);
-const chartWidth = computed(
-  () => props.width - props.marginLeft - props.marginRight
-);
-const { nodeId, data } = props;
+
+const {
+  data,
+  height,
+  marginBottom,
+  marginLeft,
+  marginRight,
+  marginTop,
+  nodeAlign,
+  nodeId,
+  width,
+} = props;
+
+const align = nodeAlign === 'justify' ? sankeyJustify : sankeyLeft;
+const chartHeight = height - marginTop - marginBottom;
+const chartWidth = computed(() => width - marginLeft - marginRight);
 
 const fn = sankey()
+  .nodeAlign(align)
   .nodeId(d => d[nodeId])
   .nodePadding(NODE_PADDING)
-  .nodeWidth(NODE_WIDTH)
   .nodeSort(undefined)
+  .nodeWidth(NODE_WIDTH)
   .extent([
     [0, 0],
-    [unref(chartWidth), unref(chartHeight)],
+    [chartWidth.value, chartHeight],
   ]);
 
 const { nodes, links } = getNodesAndLinks(fn, nodeId, data);
