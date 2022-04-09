@@ -17,8 +17,6 @@ onMounted(() => {
     .selectAll('g')
     .data(props.data)
     .join('g')
-    .attr('stroke', 'gray')
-    .style('mix-blend-mode', 'multiply')
     .append('path')
     .attr('d', sankeyLinkHorizontal())
     .attr('stroke-width', d => Math.max(1, d.width));
@@ -26,5 +24,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <g class="links" ref="nodeRef" fill="none" />
+  <g :class="$style.links" fill="none" ref="nodeRef" stroke="gray" />
 </template>
+
+<style module>
+.links {
+  mix-blend-mode: multiply;
+  stroke-opacity: 0.8;
+}
+</style>
