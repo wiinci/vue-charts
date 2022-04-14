@@ -1,6 +1,6 @@
 <script setup>
 import { select } from 'd3-selection';
-import { onMounted, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 const props = defineProps({
   data: {
@@ -22,8 +22,11 @@ const nodeRef = ref(null);
 onMounted(() => {
   select(nodeRef.value)
     .selectAll('text')
-    .data(props.data)
+    .data(props.data, d => d[props.nodeId])
     .join('text')
+    .on('click', (_, d) => {
+      console.log(d);
+    })
     .attr('x', d => d.x0)
     .attr('y', d => (d.y1 + d.y0) / 2)
     .attr('dy', '0.35em')
@@ -34,6 +37,10 @@ onMounted(() => {
     .attr('stroke-linecap', 'round')
     .attr('stroke-linejoin', 'round')
     .text(d => d[props.nodeId]);
+});
+
+onBeforeUnmount(() => {
+  select(nodeRef.value).selectAll('text').on('click', null);
 });
 </script>
 
