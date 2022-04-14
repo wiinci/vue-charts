@@ -8,6 +8,10 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  nodeId: {
+    required: true,
+    type: String,
+  },
 });
 
 const nodeRef = ref(null);
@@ -15,7 +19,7 @@ const nodeRef = ref(null);
 onMounted(() => {
   select(nodeRef.value)
     .selectAll('g')
-    .data(props.data)
+    .data(props.data, d => d[props.nodeId])
     .join('g')
     .append('path')
     .attr('d', sankeyLinkHorizontal())

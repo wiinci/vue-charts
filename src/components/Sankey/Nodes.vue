@@ -7,6 +7,10 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  nodeId: {
+    required: true,
+    type: String,
+  },
 });
 
 const nodeRef = ref(null);
@@ -14,7 +18,7 @@ const nodeRef = ref(null);
 onMounted(() => {
   select(nodeRef.value)
     .selectAll('rect')
-    .data(props.data)
+    .data(props.data, d => d[props.nodeId])
     .join('rect')
     .attr('x', d => d.x0)
     .attr('y', d => d.y0)
