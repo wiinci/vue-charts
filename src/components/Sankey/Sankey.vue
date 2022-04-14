@@ -52,34 +52,29 @@ const props = defineProps({
 const NODE_PADDING = 1e9;
 const NODE_WIDTH = 1e-9;
 
-const {
-  data,
-  height,
-  marginBottom,
-  marginLeft,
-  marginRight,
-  marginTop,
-  nodeAlign,
-  nodeId,
-  width,
-} = props;
-
-const align = nodeAlign === 'justify' ? sankeyJustify : sankeyLeft;
-const chartHeight = height - marginTop - marginBottom;
-const chartWidth = computed(() => width - marginLeft - marginRight);
+const align = computed(() =>
+  props.nodeAlign === 'justify' ? sankeyJustify : sankeyLeft
+);
+const chartHeight = computed(
+  () => props.height - props.marginTop - props.marginBottom
+);
+const chartWidth = computed(
+  () => props.width - props.marginLeft - props.marginRight
+);
+const sort = computed(() => (props.sort ? null : undefined));
 
 const fn = sankey()
-  .nodeAlign(align)
-  .nodeId(d => d[nodeId])
+  .nodeAlign(align.value)
+  .nodeId(d => d[props.nodeId])
   .nodePadding(NODE_PADDING)
-  .nodeSort(undefined)
+  .nodeSort(sort.value)
   .nodeWidth(NODE_WIDTH)
   .extent([
     [0, 0],
-    [chartWidth.value, chartHeight],
+    [chartWidth.value, chartHeight.value],
   ]);
 
-const { nodes, links } = getNodesAndLinks(fn, nodeId, data);
+const { nodes, links } = getNodesAndLinks(fn, props.nodeId, props.data);
 </script>
 
 <template>
@@ -88,8 +83,9 @@ const { nodes, links } = getNodesAndLinks(fn, nodeId, data);
     :marginLeft="marginLeft"
     :marginTop="marginTop"
     :width="width"
+    v-if="links.length > 0"
   >
-    <Links :data="links" />
+    <Links :data="links" :nodeId="nodeId" />
     <Labels :data="nodes" :nodeId="nodeId" :width="chartWidth" />
   </Chart>
 </template>
