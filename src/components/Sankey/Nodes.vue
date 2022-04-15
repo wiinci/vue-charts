@@ -23,7 +23,8 @@ onMounted(() => {
     .attr('x', d => d.x0)
     .attr('y', d => d.y0)
     .attr('height', d => d.y1 - d.y0)
-    .attr('width', d => d.x1 - d.x0);
+    .attr('width', d => d.x1 - d.x0)
+    .attr('fill', 'none');
 });
 </script>
 

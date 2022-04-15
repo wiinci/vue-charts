@@ -11,6 +11,10 @@ const props = defineProps({
     required: true,
     type: String,
   },
+  nodeWidth: {
+    required: true,
+    type: Number,
+  },
   width: {
     required: true,
     type: Number,
@@ -24,19 +28,25 @@ onMounted(() => {
     .selectAll('text')
     .data(props.data, d => d[props.nodeId])
     .join('text')
-    .on('click', (_, d) => {
-      console.log(d);
-    })
-    .attr('x', d => d.x0)
+    .attr('x', d =>
+      props.nodeWidth < 1
+        ? d.x0
+        : d.x0 < props.width / 2
+        ? d.x0 + props.nodeWidth
+        : d.x1 - props.nodeWidth
+    )
     .attr('y', d => (d.y1 + d.y0) / 2)
     .attr('dy', '0.35em')
     .attr('text-anchor', d => (d.x0 < props.width / 2 ? 'start' : 'end'))
     .attr('paint-order', 'stroke')
     .attr('stroke', 'white')
-    .attr('stroke-width', '14')
+    .attr('stroke-width', '6')
     .attr('stroke-linecap', 'round')
     .attr('stroke-linejoin', 'round')
-    .text(d => d[props.nodeId]);
+    .text(d => d[props.nodeId])
+    .on('click', (_, d) => {
+      console.log(d);
+    });
 });
 
 onBeforeUnmount(() => {

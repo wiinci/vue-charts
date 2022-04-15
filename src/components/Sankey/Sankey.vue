@@ -5,15 +5,12 @@ import { computed } from 'vue';
 import Chart from '../common/Chart.vue';
 import Labels from './Labels.vue';
 import Links from './Links.vue';
+import Nodes from './Nodes.vue';
 
 const props = defineProps({
   data: {
     required: true,
     type: Array,
-  },
-  width: {
-    default: 960,
-    type: Number,
   },
   height: {
     default: 480,
@@ -35,22 +32,31 @@ const props = defineProps({
     default: 20,
     type: Number,
   },
+  nodeAlign: {
+    default: 'left',
+    type: String,
+  },
   nodeId: {
     default: 'id',
     type: String,
   },
-  nodeAlign: {
-    default: 'left',
-    type: String,
+  nodePadding: {
+    default: 10,
+    type: Number,
+  },
+  nodeWidth: {
+    default: 10,
+    type: Number,
   },
   sort: {
     default: false,
     type: Boolean,
   },
+  width: {
+    default: 960,
+    type: Number,
+  },
 });
-
-const NODE_PADDING = 1e9;
-const NODE_WIDTH = 1e-9;
 
 const align = computed(() =>
   props.nodeAlign === 'justify' ? sankeyJustify : sankeyLeft
@@ -66,9 +72,9 @@ const sort = computed(() => (props.sort ? null : undefined));
 const fn = sankey()
   .nodeAlign(align.value)
   .nodeId(d => d[props.nodeId])
-  .nodePadding(NODE_PADDING)
+  .nodePadding(props.nodePadding)
   .nodeSort(sort.value)
-  .nodeWidth(NODE_WIDTH)
+  .nodeWidth(props.nodeWidth)
   .extent([
     [0, 0],
     [chartWidth.value, chartHeight.value],
@@ -86,6 +92,12 @@ const { nodes, links } = getNodesAndLinks(fn, props.nodeId, props.data);
     v-if="links.length > 0"
   >
     <Links :data="links" :nodeId="nodeId" />
-    <Labels :data="nodes" :nodeId="nodeId" :width="chartWidth" />
+    <Nodes :data="nodes" :nodeId="nodeId" />
+    <Labels
+      :data="nodes"
+      :nodeId="nodeId"
+      :nodeWidth="nodeWidth"
+      :width="chartWidth"
+    />
   </Chart>
 </template>

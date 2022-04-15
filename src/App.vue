@@ -4,7 +4,7 @@ import data from '@/data/edges2.json';
 </script>
 
 <template>
-  <Sankey :data="data" :node-id="'id'" />
+  <Sankey :data="data" :node-id="'id'" :node-padding="1e9" :node-width="1e-9" />
 </template>
 
 <style>
