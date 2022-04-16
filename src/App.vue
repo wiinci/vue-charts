@@ -1,10 +1,24 @@
 <script setup>
 import Sankey from '@/components/Sankey/Sankey.vue';
 import data from '@/data/edges2.json';
+import { ref } from 'vue';
+
+const sort = ref(false);
+const nodeAlign = ref('left');
+const nodeId = ref('id');
+const nodePadding = ref(1e9);
+const nodeWidth = ref(1e-9);
 </script>
 
 <template>
-  <Sankey :data="data" :node-id="'id'" :node-padding="1e9" :node-width="1e-9" />
+  <Sankey
+    :data="data"
+    :node-align="nodeAlign"
+    :node-id="nodeId"
+    :node-padding="nodePadding"
+    :node-width="nodeWidth"
+    :sort="sort"
+  />
 </template>
 
 <style>
