@@ -69,18 +69,20 @@ const chartWidth = computed(
 );
 const sort = computed(() => (props.sort ? null : undefined));
 
-const fn = sankey()
-  .nodeAlign(align.value)
-  .nodeId(d => d[props.nodeId])
-  .nodePadding(props.nodePadding)
-  .nodeSort(sort.value)
-  .nodeWidth(props.nodeWidth)
-  .extent([
-    [0, 0],
-    [chartWidth.value, chartHeight.value],
-  ]);
+const fn = computed(() =>
+  sankey()
+    .nodeAlign(align.value)
+    .nodeId(d => d[props.nodeId])
+    .nodePadding(props.nodePadding)
+    .nodeSort(sort.value)
+    .nodeWidth(props.nodeWidth)
+    .extent([
+      [0, 0],
+      [chartWidth.value, chartHeight.value],
+    ])
+);
 
-const { nodes, links } = getNodesAndLinks(fn, props.nodeId, props.data);
+const { nodes, links } = getNodesAndLinks(fn.value, props.nodeId, props.data);
 </script>
 
 <template>
@@ -89,7 +91,6 @@ const { nodes, links } = getNodesAndLinks(fn, props.nodeId, props.data);
     :marginLeft="marginLeft"
     :marginTop="marginTop"
     :width="width"
-    v-if="links.length > 0"
   >
     <Links :data="links" :nodeId="nodeId" />
     <Nodes :data="nodes" :nodeId="nodeId" />
