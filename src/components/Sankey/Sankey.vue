@@ -1,5 +1,5 @@
 <script setup>
-import getNodesAndLinks from '@/util/getNodesAndLinks';
+import useNodesAndLinks from '@/hooks/useNodesAndLinks';
 import Chart from '../common/Chart.vue';
 import Labels from './Labels.vue';
 import Links from './Links.vue';
@@ -56,7 +56,7 @@ const props = defineProps({
   },
 });
 
-const { chartWidth, links, nodes } = getNodesAndLinks(props);
+const { chartWidth, links, nodes } = useNodesAndLinks(props);
 </script>
 
 <template>
