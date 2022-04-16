@@ -1,7 +1,5 @@
 <script setup>
 import getNodesAndLinks from '@/util/getNodesAndLinks';
-import { sankey, sankeyJustify, sankeyLeft } from 'd3-sankey';
-import { computed } from 'vue';
 import Chart from '../common/Chart.vue';
 import Labels from './Labels.vue';
 import Links from './Links.vue';
@@ -58,31 +56,7 @@ const props = defineProps({
   },
 });
 
-const align = computed(() =>
-  props.nodeAlign === 'justify' ? sankeyJustify : sankeyLeft
-);
-const chartHeight = computed(
-  () => props.height - props.marginTop - props.marginBottom
-);
-const chartWidth = computed(
-  () => props.width - props.marginLeft - props.marginRight
-);
-const sort = computed(() => (props.sort ? null : undefined));
-
-const fn = computed(() =>
-  sankey()
-    .nodeAlign(align.value)
-    .nodeId(d => d[props.nodeId])
-    .nodePadding(props.nodePadding)
-    .nodeSort(sort.value)
-    .nodeWidth(props.nodeWidth)
-    .extent([
-      [0, 0],
-      [chartWidth.value, chartHeight.value],
-    ])
-);
-
-const { nodes, links } = getNodesAndLinks(fn.value, props.nodeId, props.data);
+const { chartWidth, links, nodes } = getNodesAndLinks(props);
 </script>
 
 <template>
