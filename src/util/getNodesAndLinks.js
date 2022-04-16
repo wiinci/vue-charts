@@ -7,7 +7,11 @@
 
 const getNodesAndLinks = (sankey, nodeId, data) => {
   const nodeById = new Map();
-  data.map(d => (d.value = 1));
+
+  // Sankey requires a value and since we're showing a lineage, we need to set the value to 1
+  if (!data[0].value) {
+    data.map(d => (d.value = 1));
+  }
 
   for (const link of data) {
     if (!nodeById.has(link.source)) {
