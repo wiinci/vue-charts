@@ -1,12 +1,20 @@
 <script setup>
 import { sankeyLinkHorizontal } from 'd3-sankey';
 import { select } from 'd3-selection';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
   data: {
     type: Array,
     required: true,
+  },
+  isHovered: {
+    default: false,
+    type: Boolean,
+  },
+  labelHoverId: {
+    default: '',
+    type: String,
   },
   nodeId: {
     required: true,
@@ -18,13 +26,28 @@ const nodeRef = ref(null);
 
 onMounted(() => {
   select(nodeRef.value)
-    .selectAll('g')
+    .selectAll('path')
     .data(props.data, d => d[props.nodeId])
-    .join('g')
-    .append('path')
+    .join('path')
     .attr('d', sankeyLinkHorizontal())
     .attr('stroke-width', d => Math.max(1, d.width));
 });
+
+watch(
+  () => props.labelHoverId,
+  () => {
+    select(nodeRef.value)
+      .selectAll('path')
+      .style('stroke-opacity', d => {
+        return props.isHovered
+          ? d.source.id === props.labelHoverId ||
+            d.target.id === props.labelHoverId
+            ? 1
+            : 0.2
+          : 1;
+      });
+  }
+);
 </script>
 
 <template>
@@ -34,6 +57,5 @@ onMounted(() => {
 <style module>
 .links {
   mix-blend-mode: multiply;
-  stroke-opacity: 0.8;
 }
 </style>

@@ -1,5 +1,6 @@
 <script setup>
 import useNodesAndLinks from '@/hooks/useNodesAndLinks';
+import { computed, ref } from 'vue';
 import Chart from '../common/Chart.vue';
 import Labels from './Labels.vue';
 import Links from './Links.vue';
@@ -57,22 +58,34 @@ const props = defineProps({
 });
 
 const { chartWidth, links, nodes } = useNodesAndLinks(props);
+
+const labelId = ref('');
+const labelHover = id => {
+  labelId.value = id;
+};
+const isHovered = computed(() => labelId.value !== '');
 </script>
 
 <template>
   <Chart
     :height="height"
-    :marginLeft="marginLeft"
-    :marginTop="marginTop"
+    :margin-left="marginLeft"
+    :margin-top="marginTop"
     :width="width"
   >
-    <Links :data="links" :nodeId="nodeId" />
-    <Nodes :data="nodes" :nodeId="nodeId" />
+    <Links
+      :data="links"
+      :is-hovered="isHovered"
+      :label-hover-id="labelId"
+      :node-id="nodeId"
+    />
+    <Nodes :data="nodes" :node-id="nodeId" />
     <Labels
       :data="nodes"
-      :nodeId="nodeId"
-      :nodeWidth="nodeWidth"
+      :node-id="nodeId"
+      :node-width="nodeWidth"
       :width="chartWidth"
+      @label:hover="labelHover"
     />
   </Chart>
 </template>

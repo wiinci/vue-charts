@@ -21,6 +21,8 @@ const props = defineProps({
   },
 });
 
+const emit = defineEmits(['label:hover']);
+
 const nodeRef = ref(null);
 
 onMounted(() => {
@@ -46,11 +48,21 @@ onMounted(() => {
     .text(d => d[props.nodeId])
     .on('click', (_, d) => {
       console.log(d);
+    })
+    .on('mouseenter', (_, d) => {
+      emit('label:hover', d.id);
+    })
+    .on('mouseleave', () => {
+      emit('label:hover', '');
     });
 });
 
 onBeforeUnmount(() => {
-  select(nodeRef.value).selectAll('text').on('click', null);
+  select(nodeRef.value)
+    .selectAll('text')
+    .on('click', null)
+    .on('mouseenter', null)
+    .on('mouseleave', null);
 });
 </script>
 
