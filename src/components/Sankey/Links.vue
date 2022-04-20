@@ -1,7 +1,7 @@
 <script setup>
 import { sankeyLinkHorizontal } from 'd3-sankey';
 import { select } from 'd3-selection';
-import { onMounted, ref, watch } from 'vue';
+import { ref, watchEffect } from 'vue';
 
 const props = defineProps({
   data: {
@@ -24,30 +24,22 @@ const props = defineProps({
 
 const nodeRef = ref(null);
 
-onMounted(() => {
+watchEffect(() => {
   select(nodeRef.value)
     .selectAll('path')
     .data(props.data, d => d[props.nodeId])
     .join('path')
     .attr('d', sankeyLinkHorizontal())
-    .attr('stroke-width', d => Math.max(1, d.width));
+    .attr('stroke-width', d => Math.max(1, d.width))
+    .attr('stroke-opacity', d => {
+      return props.isHovered
+        ? d.source.id === props.labelHoverId ||
+          d.target.id === props.labelHoverId
+          ? 1
+          : 0.2
+        : 1;
+    });
 });
-
-watch(
-  () => props.labelHoverId,
-  () => {
-    select(nodeRef.value)
-      .selectAll('path')
-      .style('stroke-opacity', d => {
-        return props.isHovered
-          ? d.source.id === props.labelHoverId ||
-            d.target.id === props.labelHoverId
-            ? 1
-            : 0.2
-          : 1;
-      });
-  }
-);
 </script>
 
 <template>
