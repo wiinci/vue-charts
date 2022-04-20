@@ -46,9 +46,6 @@ onMounted(() => {
     .attr('stroke-linecap', 'round')
     .attr('stroke-linejoin', 'round')
     .text(d => d[props.nodeId])
-    .on('click', (_, d) => {
-      console.log(d);
-    })
     .on('mouseenter', (_, d) => {
       emit('label:hover', d.id);
     })
@@ -60,7 +57,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   select(nodeRef.value)
     .selectAll('text')
-    .on('click', null)
     .on('mouseenter', null)
     .on('mouseleave', null);
 });
