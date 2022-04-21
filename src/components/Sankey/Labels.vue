@@ -1,6 +1,6 @@
 <script setup>
 import { select } from 'd3-selection';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
 const props = defineProps({
   data: {
@@ -20,8 +20,6 @@ const props = defineProps({
     type: Number,
   },
 });
-
-const emit = defineEmits(['label:hover']);
 
 const nodeRef = ref(null);
 
@@ -45,20 +43,7 @@ onMounted(() => {
     .attr('stroke-width', '6')
     .attr('stroke-linecap', 'round')
     .attr('stroke-linejoin', 'round')
-    .text(d => d[props.nodeId])
-    .on('mouseenter', (_, d) => {
-      emit('label:hover', d.id);
-    })
-    .on('mouseleave', () => {
-      emit('label:hover', '');
-    });
-});
-
-onBeforeUnmount(() => {
-  select(nodeRef.value)
-    .selectAll('text')
-    .on('mouseenter', null)
-    .on('mouseleave', null);
+    .text(d => d[props.nodeId]);
 });
 </script>
 

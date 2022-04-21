@@ -1,4 +1,5 @@
 <script setup>
+import Voronoi from '@/components/common/Voronoi.vue';
 import useNodesAndLinks from '@/hooks/useNodesAndLinks';
 import { computed, ref } from 'vue';
 import Chart from '../common/Chart.vue';
@@ -85,6 +86,12 @@ const isHovered = computed(() => labelId.value !== '');
       :node-id="nodeId"
       :node-width="nodeWidth"
       :width="chartWidth"
+    />
+    <Voronoi
+      :data="nodes"
+      :height="height"
+      :node-id="nodeId"
+      :width="width"
       @label:hover="labelHover"
     />
   </Chart>
