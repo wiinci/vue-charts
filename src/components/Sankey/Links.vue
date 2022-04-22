@@ -1,4 +1,5 @@
 <script setup>
+import { constants } from '@/assets/constants.js';
 import { sankeyLinkHorizontal } from 'd3-sankey';
 import { select } from 'd3-selection';
 import { ref, watchEffect } from 'vue';
@@ -31,23 +32,27 @@ watchEffect(() => {
     .join('path')
     .attr('d', sankeyLinkHorizontal())
     .attr('stroke-width', d => Math.max(1, d.width))
-    .attr('stroke-opacity', d => {
+    .attr('stroke', d => {
       return props.isHovered
         ? d.source.id === props.labelHoverId ||
           d.target.id === props.labelHoverId
-          ? 1
-          : 0.2
-        : 1;
+          ? constants.linkColorHighlight
+          : constants.linkColor
+        : constants.linkColor;
+    })
+    .classed('raise', d => {
+      return props.isHovered
+        ? d.source.id === props.labelHoverId ||
+          d.target.id === props.labelHoverId
+          ? true
+          : false
+        : false;
     });
+
+  select(nodeRef.value).selectAll('path.raise').raise();
 });
 </script>
 
 <template>
-  <g :class="$style.links" fill="none" ref="nodeRef" stroke="gray" />
+  <g class="links" :stroke="constants.linkColor" fill="none" ref="nodeRef" />
 </template>
-
-<style module>
-.links {
-  mix-blend-mode: multiply;
-}
-</style>
