@@ -1,5 +1,5 @@
 <script setup>
-import { constants } from '@/assets/constants.js';
+import { constants } from '@/assets/constants';
 import { sankeyLinkHorizontal } from 'd3-sankey';
 import { select } from 'd3-selection';
 import { ref, watchEffect } from 'vue';
