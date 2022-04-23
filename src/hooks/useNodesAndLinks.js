@@ -66,6 +66,7 @@ const useNodesAndLinks = props => {
   });
 
   return {
+    chartHeight,
     chartWidth,
     links,
     nodes,

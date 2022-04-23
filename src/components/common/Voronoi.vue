@@ -12,6 +12,10 @@ const props = defineProps({
     required: true,
     type: Number,
   },
+  marginLeft: {
+    required: true,
+    type: Number,
+  },
   nodeId: {
     required: true,
     type: String,
@@ -20,18 +24,24 @@ const props = defineProps({
     required: true,
     type: Number,
   },
+  xAccessor: {
+    required: true,
+    type: Function,
+  },
+  yAccessor: {
+    required: true,
+    type: Function,
+  },
 });
 
 const emit = defineEmits(['label:hover']);
 const nodeRef = ref(null);
 
-const xAccessor = d => d.x0;
-const yAccessor = d => d.y0;
-const voronoi = delaunay.from(props.data, xAccessor, yAccessor);
+const voronoi = delaunay.from(props.data, props.xAccessor, props.yAccessor);
 
 onMounted(() => {
   select(nodeRef.value)
-    .attr('transform', 'translate(0,0)')
+    .attr('transform', `translate(-${props.marginLeft}, 0)`)
     .selectAll('rect')
     .data([props.data])
     .join('rect')

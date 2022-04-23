@@ -11,6 +11,14 @@ const props = defineProps({
     required: true,
     type: String,
   },
+  xAccessor: {
+    required: true,
+    type: Function,
+  },
+  yAccessor: {
+    required: true,
+    type: Function,
+  },
 });
 
 const nodeRef = ref(null);
@@ -20,11 +28,11 @@ onMounted(() => {
     .selectAll('rect')
     .data(props.data, d => d[props.nodeId])
     .join('rect')
-    .attr('x', d => d.x0)
-    .attr('y', d => d.y0)
+    .attr('fill', 'none')
     .attr('height', d => d.y1 - d.y0)
     .attr('width', d => d.x1 - d.x0)
-    .attr('fill', 'none');
+    .attr('x', props.xAccessor)
+    .attr('y', props.yAccessor);
 });
 </script>
 

@@ -58,13 +58,16 @@ const props = defineProps({
   },
 });
 
-const { chartWidth, links, nodes } = useNodesAndLinks(props);
+const { chartHeight, chartWidth, links, nodes } = useNodesAndLinks(props);
 
 const labelId = ref('');
+const isHovered = computed(() => labelId.value !== '');
+const xAccessor = computed(() => d => d.x0);
+const yAccessor = computed(() => d => d.y0);
+
 const labelHover = id => {
   labelId.value = id;
 };
-const isHovered = computed(() => labelId.value !== '');
 </script>
 
 <template>
@@ -80,7 +83,12 @@ const isHovered = computed(() => labelId.value !== '');
       :label-hover-id="labelId"
       :node-id="nodeId"
     />
-    <Nodes :data="nodes" :node-id="nodeId" />
+    <Nodes
+      :data="nodes"
+      :node-id="nodeId"
+      :x-accessor="xAccessor"
+      :y-accessor="yAccessor"
+    />
     <Labels
       :data="nodes"
       :node-id="nodeId"
@@ -89,9 +97,12 @@ const isHovered = computed(() => labelId.value !== '');
     />
     <Voronoi
       :data="nodes"
-      :height="height"
+      :height="chartHeight"
+      :margin-left="marginLeft"
       :node-id="nodeId"
       :width="width"
+      :x-accessor="xAccessor"
+      :y-accessor="yAccessor"
       @label:hover="labelHover"
     />
   </Chart>
