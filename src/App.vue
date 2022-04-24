@@ -3,11 +3,11 @@ import Sankey from '@/components/Sankey/Sankey.vue';
 import data from '@/data/edges2.json';
 import { ref } from 'vue';
 
-const sort = ref(false);
 const nodeAlign = ref('left');
 const nodeId = ref('id');
 const nodePadding = ref(1e9);
 const nodeWidth = ref(1e-9);
+const sort = ref(false);
 </script>
 
 <template>
