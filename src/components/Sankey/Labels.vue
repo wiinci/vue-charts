@@ -33,7 +33,7 @@ onMounted(() => {
         enter
           .append('text')
           .text(d => d[props.nodeId])
-          .attr('dy', '0.35em')
+          .attr('dominant-baseline', 'middle')
           .attr('paint-order', 'stroke')
           .attr('stroke-linecap', 'round')
           .attr('stroke-linejoin', 'round')
