@@ -12,10 +12,6 @@ const props = defineProps({
     required: true,
     type: Number,
   },
-  marginLeft: {
-    required: true,
-    type: Number,
-  },
   nodeId: {
     required: true,
     type: String,
@@ -41,7 +37,7 @@ const voronoi = delaunay.from(props.data, props.xAccessor, props.yAccessor);
 
 onMounted(() => {
   select(nodeRef.value)
-    .attr('transform', `translate(-${props.marginLeft}, 0)`)
+    .attr('transform', 'translate(0, 0)')
     .selectAll('rect')
     .data([props.data])
     .join('rect')

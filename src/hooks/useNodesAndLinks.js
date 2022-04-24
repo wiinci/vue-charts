@@ -21,6 +21,10 @@ const useNodesAndLinks = props => {
     () => props.width - props.marginLeft - props.marginRight
   );
 
+  const offsetStart = computed(() => props.marginLeft + props.marginRight);
+
+  const offsetEnd = computed(() => props.marginTop + props.marginBottom);
+
   const sort = computed(() => (props.sort ? null : undefined));
 
   const fn = computed(() =>
@@ -31,7 +35,7 @@ const useNodesAndLinks = props => {
       .nodeSort(sort.value)
       .nodeWidth(props.nodeWidth)
       .extent([
-        [0, 0],
+        [offsetStart.value, offsetEnd.value],
         [chartWidth.value, chartHeight.value],
       ])
   );
