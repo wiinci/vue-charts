@@ -1,7 +1,13 @@
 <script setup>
 import { Delaunay as delaunay } from 'd3-delaunay';
 import { pointer, select } from 'd3-selection';
-import { onBeforeUnmount, onMounted, proxyRefs, ref } from 'vue';
+import {
+  onBeforeUnmount,
+  onMounted,
+  proxyRefs,
+  ref,
+  shallowReadonly,
+} from 'vue';
 
 const props = defineProps({
   data: {
@@ -26,12 +32,12 @@ const props = defineProps({
   },
 });
 
-const { data, height, width, xAccessor, yAccessor } = proxyRefs(props);
-
 const emit = defineEmits(['label:hover']);
-const nodeRef = ref(null);
 
+const { data, height, width, xAccessor, yAccessor } = proxyRefs(props);
 const voronoi = delaunay.from(data, xAccessor, yAccessor);
+
+const nodeRef = ref(null);
 
 onMounted(() => {
   select(nodeRef.value)
@@ -48,7 +54,7 @@ onMounted(() => {
     })
     .on('pointermove', (e, d) => {
       const index = voronoi.find(...pointer(e));
-      emit('label:hover', d[index] || {});
+      emit('label:hover', shallowReadonly(d[index]) || {});
     });
 });
 

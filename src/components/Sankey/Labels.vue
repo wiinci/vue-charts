@@ -52,7 +52,7 @@ onMounted(() => {
           .call(enter =>
             enter
               .transition()
-              .delay(d => constants.duration.medium * (d.depth + 1))
+              .delay(d => constants.duration.short * (d.depth + 1))
               .attr('opacity', 1)
           ),
       update => update,

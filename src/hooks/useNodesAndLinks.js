@@ -4,7 +4,7 @@
  * @returns {object} the sankey nodes and links
  */
 import { sankey, sankeyJustify, sankeyLeft } from 'd3-sankey';
-import { computed, proxyRefs } from 'vue';
+import { computed, proxyRefs, shallowReadonly } from 'vue';
 
 const useNodesAndLinks = props => {
   const {
@@ -83,8 +83,8 @@ const useNodesAndLinks = props => {
   return {
     chartHeight,
     chartWidth,
-    links,
-    nodes,
+    links: shallowReadonly(links),
+    nodes: shallowReadonly(nodes),
   };
 };
 

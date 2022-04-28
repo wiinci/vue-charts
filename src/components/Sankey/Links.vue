@@ -6,29 +6,6 @@ import { linkHorizontal } from 'd3-shape';
 import { transition } from 'd3-transition';
 import { proxyRefs, ref, watchEffect } from 'vue';
 
-const props = defineProps({
-  data: {
-    type: Array,
-    required: true,
-  },
-  isHovered: {
-    default: false,
-    type: Boolean,
-  },
-  labelHoverDatum: {
-    default: {},
-    type: Object,
-  },
-  labelHoverId: {
-    default: '',
-    type: String,
-  },
-  nodeId: {
-    required: true,
-    type: String,
-  },
-});
-
 const linkAccessor = linkHorizontal()
   .source(d => [d.source.x0, d.source.y0])
   .target(d => [d.source.x0, d.source.y0]);
@@ -54,6 +31,29 @@ const targets = d => {
   }
 };
 
+const props = defineProps({
+  data: {
+    type: Array,
+    required: true,
+  },
+  isHovered: {
+    default: false,
+    type: Boolean,
+  },
+  labelHoverDatum: {
+    default: {},
+    type: Object,
+  },
+  labelHoverId: {
+    default: '',
+    type: String,
+  },
+  nodeId: {
+    required: true,
+    type: String,
+  },
+});
+
 const nodeRef = ref(null);
 
 watchEffect(() => {
@@ -76,7 +76,7 @@ watchEffect(() => {
           .call(enter =>
             enter
               .transition(transition().duration(constants.duration.short))
-              .delay(d => constants.duration.medium * (d.source.depth + 1))
+              .delay(d => constants.duration.short * (d.source.depth + 1))
               .attr('d', sankeyLinkHorizontal())
           ),
       update => update,
