@@ -31,9 +31,9 @@ This example explores the possibility of using a Sankey diagram for a data linea
 
 ![animate](https://user-images.githubusercontent.com/505739/164956042-df35b3f8-6a04-4f0d-9de4-d8f20395ee8a.gif)
 
-### Highlight behavior
+### End-to-end link highlight behavior
 
-![highlight](https://user-images.githubusercontent.com/505739/164955957-9fc4e62e-6918-415a-97d3-dbe6e42f422d.gif)
+![highlight](https://user-images.githubusercontent.com/505739/165667727-133449ac-2f2d-44b7-892e-f34bf6d9660c.gif)
 
 ## Todo
 
