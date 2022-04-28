@@ -60,13 +60,21 @@ const props = defineProps({
 
 const { chartWidth, links, nodes } = useNodesAndLinks(props);
 
+const labelDatum = ref({});
 const labelId = ref('');
+
 const isHovered = computed(() => labelId.value !== '');
 const xAccessor = computed(() => d => d.x0);
 const yAccessor = computed(() => d => d.y0);
 
-const labelHover = id => {
-  labelId.value = id;
+const labelHover = d => {
+  if (typeof d === 'object') {
+    labelId.value = d.id;
+    labelDatum.value = d;
+  } else {
+    labelId.value = '';
+    labelDatum.value = {};
+  }
 };
 </script>
 
@@ -75,6 +83,7 @@ const labelHover = id => {
     <Links
       :data="links"
       :is-hovered="isHovered"
+      :label-hover-datum="labelDatum"
       :label-hover-id="labelId"
       :node-id="nodeId"
     />

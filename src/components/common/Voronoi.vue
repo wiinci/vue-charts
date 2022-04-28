@@ -1,7 +1,7 @@
 <script setup>
 import { Delaunay as delaunay } from 'd3-delaunay';
 import { pointer, select } from 'd3-selection';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { onBeforeUnmount, onMounted, proxyRefs, ref } from 'vue';
 
 const props = defineProps({
   data: {
@@ -11,10 +11,6 @@ const props = defineProps({
   height: {
     required: true,
     type: Number,
-  },
-  nodeId: {
-    required: true,
-    type: String,
   },
   width: {
     required: true,
@@ -30,19 +26,21 @@ const props = defineProps({
   },
 });
 
+const { data, height, width, xAccessor, yAccessor } = proxyRefs(props);
+
 const emit = defineEmits(['label:hover']);
 const nodeRef = ref(null);
 
-const voronoi = delaunay.from(props.data, props.xAccessor, props.yAccessor);
+const voronoi = delaunay.from(data, xAccessor, yAccessor);
 
 onMounted(() => {
   select(nodeRef.value)
     .attr('transform', 'translate(0, 0)')
     .selectAll('rect')
-    .data([props.data])
+    .data([data])
     .join('rect')
-    .attr('height', props.height)
-    .attr('width', props.width)
+    .attr('height', height)
+    .attr('width', width)
     .attr('fill', 'none')
     .attr('pointer-events', 'all')
     .on('pointerleave', () => {
@@ -50,7 +48,7 @@ onMounted(() => {
     })
     .on('pointermove', (e, d) => {
       const index = voronoi.find(...pointer(e));
-      emit('label:hover', d[index][props.nodeId]);
+      emit('label:hover', d[index] || {});
     });
 });
 

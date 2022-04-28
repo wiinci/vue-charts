@@ -4,7 +4,7 @@ import { sankeyLinkHorizontal } from 'd3-sankey';
 import { select } from 'd3-selection';
 import { linkHorizontal } from 'd3-shape';
 import { transition } from 'd3-transition';
-import { ref, watchEffect } from 'vue';
+import { proxyRefs, ref, watchEffect } from 'vue';
 
 const props = defineProps({
   data: {
@@ -14,6 +14,10 @@ const props = defineProps({
   isHovered: {
     default: false,
     type: Boolean,
+  },
+  labelHoverDatum: {
+    default: {},
+    type: Object,
   },
   labelHoverId: {
     default: '',
@@ -29,12 +33,40 @@ const linkAccessor = linkHorizontal()
   .source(d => [d.source.x0, d.source.y0])
   .target(d => [d.source.x0, d.source.y0]);
 
+const source = ref([]);
+const target = ref([]);
+
+const sources = d => {
+  if (d.sourceLinks.length > 0) {
+    for (const link of d.sourceLinks) {
+      target.value.push(link.target.id);
+      sources(link.target);
+    }
+  }
+};
+
+const targets = d => {
+  if (d.targetLinks.length > 0) {
+    for (const link of d.targetLinks) {
+      source.value.push(link.source.id);
+      targets(link.source);
+    }
+  }
+};
+
 const nodeRef = ref(null);
 
 watchEffect(() => {
+  const { data, isHovered, labelHoverId, nodeId } = proxyRefs(props);
+  if (typeof props.labelHoverDatum.id !== 'undefined') {
+    source.value = [];
+    target.value = [];
+    sources(props.labelHoverDatum);
+    targets(props.labelHoverDatum);
+  }
   select(nodeRef.value)
     .selectAll('path')
-    .data(props.data, d => d[props.nodeId])
+    .data(data, d => d[nodeId])
     .join(
       enter =>
         enter
@@ -51,20 +83,42 @@ watchEffect(() => {
       exit => exit.remove()
     )
     .attr('stroke', d => {
-      return props.isHovered
-        ? d.source.id === props.labelHoverId ||
-          d.target.id === props.labelHoverId
-          ? constants.linkColorHighlight
-          : constants.linkColor
-        : constants.linkColor;
+      if (isHovered) {
+        if (d.source.id === labelHoverId || d.target.id === labelHoverId) {
+          return constants.linkColorHighlight;
+        }
+        for (const id of target.value) {
+          if (id === d.source.id) {
+            return constants.linkColorHighlight;
+          }
+        }
+        for (const id of source.value) {
+          if (id === d.target.id) {
+            return constants.linkColorHighlight;
+          }
+        }
+      }
+
+      return constants.linkColor;
     })
     .classed('raise', d => {
-      return props.isHovered
-        ? d.source.id === props.labelHoverId ||
-          d.target.id === props.labelHoverId
-          ? true
-          : false
-        : false;
+      if (isHovered) {
+        if (d.source.id === labelHoverId || d.target.id === labelHoverId) {
+          return true;
+        }
+        for (const id of target.value) {
+          if (id === d.source.id) {
+            return true;
+          }
+        }
+        for (const id of source.value) {
+          if (id === d.target.id) {
+            return true;
+          }
+        }
+      }
+
+      return false;
     });
 
   select(nodeRef.value).selectAll('path.raise').raise();
