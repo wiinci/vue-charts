@@ -59,7 +59,11 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  select(nodeRef.value).selectAll('rect').remove();
+  select(nodeRef.value)
+    .selectAll('rect')
+    .on('pointerleave', null)
+    .on('pointermove', null)
+    .remove();
 });
 </script>
 
