@@ -1,35 +1,11 @@
 <script setup>
 import { constants } from '@/assets/constants';
+import highlightLinks from '@/utils/highlightLinks';
 import { sankeyLinkHorizontal } from 'd3-sankey';
 import { select } from 'd3-selection';
 import { linkHorizontal } from 'd3-shape';
 import { transition } from 'd3-transition';
 import { proxyRefs, ref, watchEffect } from 'vue';
-
-const linkAccessor = linkHorizontal()
-  .source(d => [d.source.x0, d.source.y0])
-  .target(d => [d.source.x0, d.source.y0]);
-
-const source = ref([]);
-const target = ref([]);
-
-const sources = d => {
-  if (d.sourceLinks.length > 0) {
-    for (const link of d.sourceLinks) {
-      target.value.push(link.target.id);
-      sources(link.target);
-    }
-  }
-};
-
-const targets = d => {
-  if (d.targetLinks.length > 0) {
-    for (const link of d.targetLinks) {
-      source.value.push(link.source.id);
-      targets(link.source);
-    }
-  }
-};
 
 const props = defineProps({
   data: {
@@ -55,6 +31,31 @@ const props = defineProps({
 });
 
 const nodeRef = ref(null);
+
+const linkAccessor = linkHorizontal()
+  .source(d => [d.source.x0, d.source.y0])
+  .target(d => [d.source.x0, d.source.y0]);
+
+const source = ref([]);
+const target = ref([]);
+
+const sources = d => {
+  if (d.sourceLinks.length > 0) {
+    for (const link of d.sourceLinks) {
+      target.value.push(link.target.id);
+      sources(link.target);
+    }
+  }
+};
+
+const targets = d => {
+  if (d.targetLinks.length > 0) {
+    for (const link of d.targetLinks) {
+      source.value.push(link.source.id);
+      targets(link.source);
+    }
+  }
+};
 
 watchEffect(() => {
   const { data, isHovered, labelHoverId, nodeId } = proxyRefs(props);
@@ -82,44 +83,28 @@ watchEffect(() => {
       update => update,
       exit => exit.remove()
     )
-    .attr('stroke', d => {
-      if (isHovered) {
-        if (d.source.id === labelHoverId || d.target.id === labelHoverId) {
-          return constants.linkColorHighlight;
-        }
-        for (const id of target.value) {
-          if (id === d.source.id) {
-            return constants.linkColorHighlight;
-          }
-        }
-        for (const id of source.value) {
-          if (id === d.target.id) {
-            return constants.linkColorHighlight;
-          }
-        }
-      }
-
-      return constants.linkColor;
-    })
-    .classed('raise', d => {
-      if (isHovered) {
-        if (d.source.id === labelHoverId || d.target.id === labelHoverId) {
-          return true;
-        }
-        for (const id of target.value) {
-          if (id === d.source.id) {
-            return true;
-          }
-        }
-        for (const id of source.value) {
-          if (id === d.target.id) {
-            return true;
-          }
-        }
-      }
-
-      return false;
-    });
+    .attr('stroke', d =>
+      highlightLinks({
+        d,
+        falseCase: constants.linkColor,
+        isHovered,
+        labelHoverId,
+        source,
+        target,
+        trueCase: constants.linkColorHighlight,
+      })
+    )
+    .classed('raise', d =>
+      highlightLinks({
+        d,
+        falseCase: false,
+        isHovered,
+        labelHoverId,
+        source,
+        target,
+        trueCase: true,
+      })
+    );
 
   select(nodeRef.value).selectAll('path.raise').raise();
 });
