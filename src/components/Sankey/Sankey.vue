@@ -7,23 +7,6 @@ import Labels from './Labels.vue';
 import Links from './Links.vue';
 import Nodes from './Nodes.vue';
 
-const labelDatum = ref({});
-const labelId = ref('');
-
-const labelHover = d => {
-  if (typeof d === 'object') {
-    labelId.value = d.id;
-    labelDatum.value = d;
-  } else {
-    labelId.value = '';
-    labelDatum.value = {};
-  }
-};
-
-const isHovered = computed(() => labelId.value !== '');
-const xAccessor = computed(() => d => d.x0);
-const yAccessor = computed(() => d => d.y0);
-
 const props = defineProps({
   data: {
     required: true,
@@ -76,6 +59,23 @@ const props = defineProps({
 });
 
 const { chartWidth, links, nodes } = useNodesAndLinks(props);
+
+const labelDatum = ref({});
+const labelId = ref('');
+
+const labelHover = d => {
+  if (typeof d === 'object') {
+    labelId.value = d.id;
+    labelDatum.value = d;
+  } else {
+    labelId.value = '';
+    labelDatum.value = {};
+  }
+};
+
+const isHovered = computed(() => labelId.value !== '');
+const xAccessor = computed(() => d => d.x0);
+const yAccessor = computed(() => d => d.y0);
 </script>
 
 <template>
