@@ -94,6 +94,17 @@ watchEffect(() => {
         trueCase: constants.linkColorHighlight,
       })
     )
+    .attr('stroke-width', d =>
+      highlightLinks({
+        d,
+        falseCase: 1,
+        isHovered,
+        labelHoverId,
+        source,
+        target,
+        trueCase: 1.5,
+      })
+    )
     .classed('raise', d =>
       highlightLinks({
         d,
