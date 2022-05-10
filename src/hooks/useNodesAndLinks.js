@@ -10,9 +10,7 @@ const useNodesAndLinks = props => {
   const {
     data,
     height,
-    marginBottom,
     marginLeft,
-    marginRight,
     marginTop,
     nodeAlign,
     nodeId,
@@ -28,13 +26,9 @@ const useNodesAndLinks = props => {
     nodeAlign === 'justify' ? sankeyJustify : sankeyLeft
   );
 
-  const chartHeight = computed(() => height - marginTop - marginBottom);
+  const chartHeight = computed(() => height - marginTop);
 
-  const chartWidth = computed(() => width - marginLeft - marginRight);
-
-  const offsetStart = computed(() => marginLeft + marginRight);
-
-  const offsetEnd = computed(() => marginTop + marginBottom);
+  const chartWidth = computed(() => width - marginLeft);
 
   const sorted = computed(() => (sort ? null : undefined));
 
@@ -46,7 +40,7 @@ const useNodesAndLinks = props => {
       .nodeSort(sorted.value)
       .nodeWidth(nodeWidth)
       .extent([
-        [offsetStart.value, offsetEnd.value],
+        [marginLeft, marginTop],
         [chartWidth.value, chartHeight.value],
       ])
   );
@@ -75,10 +69,7 @@ const useNodesAndLinks = props => {
     links: data,
   };
 
-  const { nodes, links } = fn.value({
-    nodes: sankeyData.nodes.map(d => Object.assign({}, d)),
-    links: sankeyData.links.map(d => Object.assign({}, d)),
-  });
+  const { nodes, links } = fn.value(sankeyData);
 
   return {
     chartHeight,
