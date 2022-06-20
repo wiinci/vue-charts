@@ -58,13 +58,17 @@ const targets = d => {
 };
 
 watchEffect(() => {
-  const { data, isHovered, labelHoverId, nodeId } = proxyRefs(props);
-  if (typeof props.labelHoverDatum.id !== 'undefined') {
-    source.value = [];
-    target.value = [];
-    sources(props.labelHoverDatum);
-    targets(props.labelHoverDatum);
+  const { data, isHovered, labelHoverDatum, labelHoverId, nodeId } =
+    proxyRefs(props);
+
+  source.value = [];
+  target.value = [];
+
+  if (typeof labelHoverDatum.id !== 'undefined') {
+    sources(labelHoverDatum);
+    targets(labelHoverDatum);
   }
+
   select(nodeRef.value)
     .selectAll('path')
     .data(data, d => d[nodeId])
