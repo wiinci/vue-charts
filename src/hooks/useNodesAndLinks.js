@@ -4,7 +4,7 @@
  * @returns {object} the sankey nodes and links
  */
 import { sankey, sankeyJustify, sankeyLeft } from 'd3-sankey';
-import { computed, proxyRefs, shallowReadonly } from 'vue';
+import { computed, proxyRefs } from 'vue';
 
 const useNodesAndLinks = props => {
   const {
@@ -71,12 +71,21 @@ const useNodesAndLinks = props => {
 
   const { nodes, links } = fn.value(sankeyData);
 
-  return {
+  for (const node of nodes) {
+    if (node.sourceLinks.length > 0) {
+      node.collapsible = true;
+      node.collapsed = false;
+    } else {
+      node.collapsible = false;
+    }
+  }
+
+  return $$({
     chartHeight,
     chartWidth,
-    links: shallowReadonly(links),
-    nodes: shallowReadonly(nodes),
-  };
+    links,
+    nodes,
+  });
 };
 
 export default useNodesAndLinks;

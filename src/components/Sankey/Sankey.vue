@@ -58,10 +58,19 @@ const props = defineProps({
   },
 });
 
-const { chartWidth, links, nodes } = useNodesAndLinks(props);
+const { chartWidth, links, nodes } = $(useNodesAndLinks(props));
 
 const labelDatum = ref({});
 const labelId = ref('');
+const toggledId = ref('');
+const toggledState = ref(false);
+
+const labelClick = d => {
+  if (typeof d === 'object' && d.collapsible) {
+    toggledId.value = d.id;
+    toggledState.value = d.collapsed ? false : true;
+  }
+};
 
 const labelHover = d => {
   if (typeof d === 'object') {
@@ -90,6 +99,7 @@ const yAccessor = computed(() => d => d.y0);
     <Nodes
       :data="nodes"
       :node-id="nodeId"
+      :toggled-id="toggledId"
       :x-accessor="xAccessor"
       :y-accessor="yAccessor"
     />
@@ -97,6 +107,8 @@ const yAccessor = computed(() => d => d.y0);
       :data="nodes"
       :node-id="nodeId"
       :node-width="nodeWidth"
+      :toggled-id="toggledId"
+      :toggled-state="toggledState"
       :width="chartWidth"
     />
     <Voronoi
@@ -107,6 +119,7 @@ const yAccessor = computed(() => d => d.y0);
       :x-accessor="xAccessor"
       :y-accessor="yAccessor"
       @label:hover="labelHover"
+      @label:click="labelClick"
     />
   </Chart>
 </template>
