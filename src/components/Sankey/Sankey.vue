@@ -1,7 +1,7 @@
 <script setup>
 import Voronoi from '@/components/common/Voronoi.vue';
 import useNodesAndLinks from '@/hooks/useNodesAndLinks';
-import { computed, ref } from 'vue';
+import { computed, provide, ref } from 'vue';
 import Chart from '../common/Chart.vue';
 import Labels from './Labels.vue';
 import Links from './Links.vue';
@@ -63,6 +63,7 @@ const { chartWidth, links, nodes } = $(useNodesAndLinks(props));
 const labelDatum = ref({});
 const labelId = ref('');
 const toggledId = ref('');
+const hiddenNodes = ref([]);
 const toggledState = ref(false);
 
 const labelClick = d => {
@@ -82,20 +83,17 @@ const labelHover = d => {
   }
 };
 
-const isHovered = computed(() => labelId.value !== '');
+const hideNodes = nodes => (hiddenNodes.value = nodes);
 const xAccessor = computed(() => d => d.x0);
 const yAccessor = computed(() => d => d.y0);
+
+provide('labelDatum', labelDatum);
+provide('labelId', labelId);
 </script>
 
 <template>
   <Chart :height="height" :margin-left="0" :margin-top="0" :width="width">
-    <Links
-      :data="links"
-      :is-hovered="isHovered"
-      :label-hover-datum="labelDatum"
-      :label-hover-id="labelId"
-      :node-id="nodeId"
-    />
+    <Links :data="links" :node-id="nodeId" :hiddenNodes="hiddenNodes" />
     <Nodes
       :data="nodes"
       :node-id="nodeId"
@@ -110,6 +108,7 @@ const yAccessor = computed(() => d => d.y0);
       :toggled-id="toggledId"
       :toggled-state="toggledState"
       :width="chartWidth"
+      @nodes:hidden="hideNodes"
     />
     <Voronoi
       :data="nodes"

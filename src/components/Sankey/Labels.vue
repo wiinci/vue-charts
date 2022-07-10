@@ -30,6 +30,8 @@ const props = defineProps({
   },
 });
 
+const emit = defineEmits(['nodes:hidden']);
+
 const nodeRef = ref(null);
 const toggledNodes = ref([]);
 
@@ -55,6 +57,7 @@ watchEffect(() => {
     } else {
       toggledNodes.value = [];
     }
+    emit('nodes:hidden', toggledNodes.value);
   }
 
   select(nodeRef.value)

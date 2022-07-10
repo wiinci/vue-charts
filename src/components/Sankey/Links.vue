@@ -5,28 +5,20 @@ import { sankeyLinkHorizontal } from 'd3-sankey';
 import { select } from 'd3-selection';
 import { linkHorizontal } from 'd3-shape';
 import { transition } from 'd3-transition';
-import { proxyRefs, ref, watchEffect } from 'vue';
+import { computed, inject, proxyRefs, ref, watchEffect } from 'vue';
 
 const props = defineProps({
   data: {
     type: Array,
     required: true,
   },
-  isHovered: {
-    default: false,
-    type: Boolean,
-  },
-  labelHoverDatum: {
-    default: {},
-    type: Object,
-  },
-  labelHoverId: {
-    default: '',
-    type: String,
-  },
   nodeId: {
     required: true,
     type: String,
+  },
+  hiddenNodes: {
+    required: true,
+    type: Array,
   },
 });
 
@@ -57,16 +49,20 @@ const targets = d => {
   }
 };
 
+const labelHoverDatum = inject('labelDatum');
+const labelHoverId = inject('labelId');
+const isHovered = computed(() => labelHoverId.value !== '');
+const hasHiddenNodes = computed(() => hiddenNodes.value.length > 0);
+
 watchEffect(() => {
-  const { data, isHovered, labelHoverDatum, labelHoverId, nodeId } =
-    proxyRefs(props);
+  const { data, nodeId, hiddenNodes } = proxyRefs(props);
 
   source.value = [];
   target.value = [];
 
-  if (typeof labelHoverDatum.id !== 'undefined') {
-    sources(labelHoverDatum);
-    targets(labelHoverDatum);
+  if (typeof labelHoverDatum.value.id !== 'undefined') {
+    sources(labelHoverDatum.value);
+    targets(labelHoverDatum.value);
   }
 
   select(nodeRef.value)
@@ -88,37 +84,47 @@ watchEffect(() => {
       exit => exit.remove()
     )
     .attr('stroke', d =>
-      highlightLinks({
-        d,
-        falseCase: constants.linkColor,
-        isHovered,
-        labelHoverId,
-        source,
-        target,
-        trueCase: constants.linkColorHighlight,
-      })
+      hasHiddenNodes &&
+      hiddenNodes.find(n => n === d.source.id || n === d.target.id)
+        ? 'transparent'
+        : highlightLinks({
+            d,
+            falseCase: constants.linkColor,
+            isHovered,
+            labelHoverId: labelHoverId.value,
+            source,
+            target,
+            trueCase: constants.linkColorHighlight,
+          })
     )
     .attr('stroke-width', d =>
-      highlightLinks({
-        d,
-        falseCase: 1,
-        isHovered,
-        labelHoverId,
-        source,
-        target,
-        trueCase: 1.5,
-      })
+      console.log(d.source.id, d.target.id, hiddenNodes.value) &&
+      hasHiddenNodes &&
+      hiddenNodes.find(n => n === d.source.id || n === d.target.id)
+        ? 0
+        : highlightLinks({
+            d,
+            falseCase: 1,
+            isHovered,
+            labelHoverId: labelHoverId.value,
+            source,
+            target,
+            trueCase: 1.5,
+          })
     )
     .classed('raise', d =>
-      highlightLinks({
-        d,
-        falseCase: false,
-        isHovered,
-        labelHoverId,
-        source,
-        target,
-        trueCase: true,
-      })
+      hasHiddenNodes &&
+      hiddenNodes.find(n => n === d.source.id || n === d.target.id)
+        ? true
+        : highlightLinks({
+            d,
+            falseCase: false,
+            isHovered,
+            labelHoverId: labelHoverId.value,
+            source,
+            target,
+            trueCase: true,
+          })
     );
 
   select(nodeRef.value).selectAll('path.raise').raise();
