@@ -98,7 +98,6 @@ watchEffect(() => {
           })
     )
     .attr('stroke-width', d =>
-      console.log(d.source.id, d.target.id, hiddenNodes.value) &&
       hasHiddenNodes &&
       hiddenNodes.find(n => n === d.source.id || n === d.target.id)
         ? 0
