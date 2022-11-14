@@ -73,8 +73,9 @@ const useNodesAndLinks = props => {
 
   for (const node of nodes) {
     if (node.sourceLinks.length > 0) {
-      node.collapsible = true;
       node.collapsed = false;
+      node.collapsible = true;
+      node.collapsing = 0;
     } else {
       node.collapsible = false;
     }
