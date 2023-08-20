@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { generateTransition } from '@/utils'
 import type { ScaleLinear, ScaleTime } from 'd3-scale'
 import { BaseType, KeyType, ValueFn, select } from 'd3-selection'
 import { line as lineFunc } from 'd3-shape'
@@ -48,7 +49,7 @@ watchEffect(() => {
 						return (pathLength.value = this.getTotalLength())
 					})
 					.attr('stroke-dashoffset', pathLength.value)
-					.transition()
+					.transition(generateTransition({}))
 					.duration(555)
 					.attr('stroke-dashoffset', 0)
 			},
@@ -58,7 +59,7 @@ watchEffect(() => {
 				exit
 					.attr('d', line.value(props.data))
 					.attr('stroke-dashoffset', 0)
-					.transition()
+					.transition(generateTransition({}))
 					.duration(555)
 					.attr('stroke-dashoffset', pathLength.value)
 					.remove()

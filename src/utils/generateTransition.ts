@@ -1,10 +1,10 @@
 import { transition } from 'd3-transition'
-import { easeCubicOut } from 'd3-ease'
+import { easeCubicInOut } from 'd3-ease'
 
 export default function generateTransition({
 	delay = 0,
 	duration = 555,
-	easing = easeCubicOut,
+	easing = easeCubicInOut,
 }) {
 	const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
 
