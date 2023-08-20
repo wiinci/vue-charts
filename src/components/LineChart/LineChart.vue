@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Line from '@/components/LineChart/Line.vue'
+import Axis from '@/components/common-ts/Axis.vue'
 import Chart from '@/components/common-ts/Chart.vue'
 import { ascending, extent, max } from 'd3-array'
 import { csvParse } from 'd3-dsv'
@@ -26,8 +27,8 @@ interface Props {
 // Define the props that are passed to this component
 const props = withDefaults(defineProps<Props>(), {
 	height: 480,
-	marginBottom: 20,
-	marginLeft: 50,
+	marginBottom: 40,
+	marginLeft: 40,
 	marginRight: 20,
 	marginTop: 20,
 	width: 960,
@@ -75,18 +76,16 @@ const y = computed(() =>
 		:marginTop="props.marginTop"
 		:width="props.width"
 	>
-		<!-- <Axis
-			orient="Left"
-			:scale="y"
-		/>
-		<Axis
-			orient="Bottom"
-			:scale="x"
-		/> -->
+		<Axis :y="y" />
 		<Line
 			:data="data"
 			:x="x"
 			:y="y"
+		/>
+		<Axis
+			:height="height"
+			:width="width"
+			:x="x"
 		/>
 	</Chart>
 </template>
