@@ -4,11 +4,7 @@ import { defineConfig } from 'vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-	plugins: [
-		vue({
-			reactivityTransform: true,
-		}),
-	],
+	plugins: [vue()],
 	mode: process.env.NODE_ENV,
 	resolve: {
 		alias: {
