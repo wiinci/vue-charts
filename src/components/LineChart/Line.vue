@@ -2,10 +2,10 @@
 import { generateTransition } from '@/utils'
 import type { ScaleLinear, ScaleTime } from 'd3-scale'
 import { BaseType, KeyType, ValueFn, select } from 'd3-selection'
-import { line as lineFunc } from 'd3-shape'
+import { curveCatmullRom, line as lineFunc } from 'd3-shape'
 import { computed, ref, watchEffect } from 'vue'
 
-// Define the type of data
+// Types
 type datum = {
 	date: Date
 	value: number
@@ -17,7 +17,7 @@ interface Props {
 	y: ScaleLinear<number, number, never>
 }
 
-// Define the props that are passed to this component
+// Props
 const props = defineProps<Props>()
 
 // Line generator
@@ -26,6 +26,8 @@ const line = computed(() =>
 		(d: datum) => props.x(d.date),
 		(d: datum) => props.y(d.value)
 	)
+		.defined((d: datum) => !isNaN(d.value))
+		.curve(curveCatmullRom.alpha(0.5))
 )
 
 // Select node and draw line
@@ -49,8 +51,10 @@ watchEffect(() => {
 						return (pathLength.value = this.getTotalLength())
 					})
 					.attr('stroke-dashoffset', pathLength.value)
+					.attr('fill', 'none')
+					.attr('stroke', 'steelblue')
+					.attr('stroke-width', 1.3)
 					.transition(generateTransition({}))
-					.duration(555)
 					.attr('stroke-dashoffset', 0)
 			},
 			update =>
@@ -69,15 +73,7 @@ watchEffect(() => {
 
 <template>
 	<g
-		:class="$style.line"
+		class="line"
 		ref="lineRef"
 	/>
 </template>
-
-<style module>
-.line {
-	fill: none;
-	stroke: steelblue;
-	stroke-width: 1.5px;
-}
-</style>
