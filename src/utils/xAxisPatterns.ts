@@ -1,11 +1,15 @@
 import { select } from 'd3-selection'
 
 export default function xAxisPatterns({ node, height }) {
-	console.log(node)
 	return select(node)
 		.attr('transform', `translate(0, ${height})`)
-		.call(g => g.select('.domain').remove())
-		.call(g => g.selectAll('.tick line').attr('stroke-width', 1))
+		.call(g =>
+			g
+				.select('.domain')
+				.attr('stroke', 'currentColor')
+				.style('stroke-width', '2')
+		)
+		.call(g => g.selectAll('.tick line').attr('stroke-opacity', 1))
 		.call(g =>
 			g
 				.selectAll('.tick text')

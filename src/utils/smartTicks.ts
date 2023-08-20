@@ -11,7 +11,12 @@ export default function smartTicks(
 		step /= 2
 	}
 
-	const ticks = Math.ceil(max / step) > 1 ? Math.ceil(max / step) : 5
+	const ticks =
+		Math.ceil(max / step) > 1
+			? Math.ceil(max / step) >= 9
+				? 5
+				: Math.ceil(max / step)
+			: 5
 
 	return ticks
 }

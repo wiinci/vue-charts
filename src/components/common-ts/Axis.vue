@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import smartTicks from '@/utils/smartTicks'
-import xAxisPatterns from '@/utils/xAxisPatterns'
-import yAxisPatterns from '@/utils/yAxisPatterns'
-import { axisBottom, axisLeft } from 'd3-axis'
-import { ScaleLinear, ScaleTime } from 'd3-scale'
+import { formatTime, smartTicks, xAxisPatterns, yAxisPatterns } from '@/utils'
+import { AxisScale, axisBottom, axisLeft } from 'd3-axis'
+import { NumberValue, ScaleLinear } from 'd3-scale'
 import { select } from 'd3-selection'
 import { onMounted, ref } from 'vue'
 
 interface Props {
 	height?: number
 	width?: number
-	x?: ScaleTime<number, number, never>
+	x?: AxisScale<Date | NumberValue>
 	y?: ScaleLinear<number, number, never>
 }
 
@@ -21,20 +19,30 @@ const axisRef = ref(null)
 // X-axis
 onMounted(() => {
 	if (props.x) {
-		select(axisRef.value).call(
-			axisBottom(props.x)
-				.ticks(props.width! / 80)
-				.tickSizeOuter(0)
-		)
+		select(axisRef.value).call(axis() as any)
 		xAxisPatterns({ node: axisRef.value, height: props.height! })
 	} else {
 		const ticks = smartTicks(props.y!)
-		select(axisRef.value).call(axisLeft(props.y!.nice(ticks)).ticks(ticks))
-		yAxisPatterns({ node: axisRef.value })
+		select(axisRef.value).call(tickFn(ticks) as any)
+		yAxisPatterns({ node: axisRef.value, width: props.width! })
+	}
+
+	function axis() {
+		return axisBottom(props.x!)
+			.ticks(props.width! / 80)
+			.tickSizeOuter(0)
+			.tickFormat(d => formatTime({ date: d }))
+	}
+
+	function tickFn(ticks: any) {
+		return axisLeft(props.y!.nice(ticks)).tickSize(-props.width!).ticks(ticks)
 	}
 })
 </script>
 
 <template>
-	<g ref="axisRef" />
+	<g
+		ref="axisRef"
+		shapeRendering="geometricprecision"
+	/>
 </template>
