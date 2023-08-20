@@ -4,7 +4,7 @@ import Axis from '@/components/common-ts/Axis.vue'
 import Chart from '@/components/common-ts/Chart.vue'
 import { ascending, extent, max } from 'd3-array'
 import { csvParse } from 'd3-dsv'
-import { scaleLinear, scaleTime } from 'd3-scale'
+import { scaleLinear, scaleUtc } from 'd3-scale'
 import { timeParse } from 'd3-time-format'
 import { computed } from 'vue'
 
@@ -39,7 +39,7 @@ const parseTime = timeParse('%Y-%m-%d')
 
 // Parse data from CSV
 const data = computed(() =>
-	csvParse(props.data, (d: datum) => {
+	csvParse(props.data as unknown as string, (d: any) => {
 		d.date = parseTime(d.date.toString())!
 		d.value = +d.value
 		return d
@@ -55,7 +55,7 @@ const height = computed(
 
 // Define the x and y scales
 const x = computed(() =>
-	scaleTime(extent(data.value, (d: datum) => d.date) as [Date, Date], [
+	scaleUtc(extent(data.value, (d: datum) => d.date) as [Date, Date], [
 		0,
 		width.value,
 	])
@@ -76,7 +76,10 @@ const y = computed(() =>
 		:marginTop="props.marginTop"
 		:width="props.width"
 	>
-		<Axis :y="y" />
+		<Axis
+			:y="y"
+			:width="width"
+		/>
 		<Line
 			:data="data"
 			:x="x"
