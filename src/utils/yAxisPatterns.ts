@@ -9,10 +9,11 @@ export default function yAxisPatterns({ node, width }) {
 		.call(g =>
 			g
 				.selectAll('.tick text')
-				.attr('fill', 'currentColor')
-				.attr('font-size', '12px')
+				.attr('font-family', 'var(--font-family-system)')
+				.attr('font-size', '12')
+				.attr('font-variant-numeric', 'tabular-nums')
 				.attr('font-weight', '400')
 				.attr('text-anchor', 'end')
-				.attr('x', '-6')
+				.attr('x', '-8')
 		)
 }

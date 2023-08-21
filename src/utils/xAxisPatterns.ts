@@ -13,8 +13,9 @@ export default function xAxisPatterns({ node, height }) {
 		.call(g =>
 			g
 				.selectAll('.tick text')
-				.attr('fill', 'currentColor')
-				.attr('font-size', '12px')
+				.attr('font-family', 'var(--font-family-system)')
+				.attr('font-size', '12')
+				.attr('font-variant-numeric', 'tabular-nums')
 				.attr('font-weight', '400')
 				.attr('text-anchor', 'middle')
 				.attr('y', '12')

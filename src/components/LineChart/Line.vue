@@ -51,9 +51,6 @@ watchEffect(() => {
 						return (pathLength.value = this.getTotalLength())
 					})
 					.attr('stroke-dashoffset', pathLength.value)
-					.attr('fill', 'none')
-					.attr('stroke', 'steelblue')
-					.attr('stroke-width', 1.3)
 					.transition(generateTransition({}))
 					.attr('stroke-dashoffset', 0)
 			},
@@ -74,6 +71,11 @@ watchEffect(() => {
 <template>
 	<g
 		class="line"
+		fill="none"
 		ref="lineRef"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+		stroke-width="1.5"
+		stroke="steelblue"
 	/>
 </template>

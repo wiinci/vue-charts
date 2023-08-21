@@ -44,5 +44,6 @@ onMounted(() => {
 	<g
 		ref="axisRef"
 		shapeRendering="geometricprecision"
+		fill="currentColor"
 	/>
 </template>
