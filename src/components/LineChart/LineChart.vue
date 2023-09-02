@@ -2,20 +2,21 @@
 import Line from '@/components/LineChart/Line.vue'
 import Axis from '@/components/common-ts/Axis.vue'
 import Chart from '@/components/common-ts/Chart.vue'
-import { ascending, extent, max } from 'd3-array'
-import { csvParse } from 'd3-dsv'
-import { scaleLinear, scaleUtc } from 'd3-scale'
-import { timeParse } from 'd3-time-format'
-import { computed } from 'vue'
+import Voronoi from '@/components/common-ts/Voronoi.vue'
+import {ascending, extent, max} from 'd3-array'
+import {csvParse} from 'd3-dsv'
+import {scaleLinear, scaleUtc} from 'd3-scale'
+import {timeParse} from 'd3-time-format'
+import {computed} from 'vue'
 
 // Define the type of data
-type datum = {
+type Datum = {
 	date: Date
 	value: number
 }
 
 interface Props {
-	data: datum[] | string
+	data: Datum[] | string
 	height?: number
 	marginBottom?: number
 	marginLeft?: number
@@ -43,7 +44,7 @@ const data = computed(() =>
 		d.date = parseTime(d.date.toString())!
 		d.value = +d.value
 		return d
-	}).sort((a: datum, b: datum) => ascending(a.date, b.date))
+	}).sort((a: Datum, b: Datum) => ascending(a.date, b.date))
 )
 
 // Define the width and height of the chart
@@ -55,7 +56,7 @@ const height = computed(
 
 // Define the x and y scales
 const x = computed(() =>
-	scaleUtc(extent(data.value, (d: datum) => d.date) as [Date, Date], [
+	scaleUtc(extent(data.value, (d: Datum) => d.date) as [Date, Date], [
 		0,
 		width.value,
 	])
@@ -63,7 +64,7 @@ const x = computed(() =>
 
 const y = computed(() =>
 	scaleLinear(
-		[0, max(data.value, (d: datum) => d.value) as number],
+		[0, max(data.value, (d: Datum) => d.value) as number],
 		[height.value, 0]
 	)
 )
@@ -76,6 +77,14 @@ const y = computed(() =>
 		:marginTop="props.marginTop"
 		:width="props.width"
 	>
+		<Voronoi
+			:data="data"
+			:height="props.height"
+			:marginLeft="props.marginLeft"
+			:marginTop="props.marginTop"
+			:width="props.width"
+			:x="x"
+		/>
 		<Axis
 			:y="y"
 			:width="width"
