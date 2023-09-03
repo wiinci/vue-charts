@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { generateTransition } from '@/utils'
-import type { ScaleLinear, ScaleTime } from 'd3-scale'
-import { BaseType, KeyType, ValueFn, select } from 'd3-selection'
-import { curveCatmullRom, line as lineFunc } from 'd3-shape'
-import { computed, ref, watchEffect } from 'vue'
+import {generateTransition} from '@/utils'
+import type {ScaleLinear, ScaleTime} from 'd3-scale'
+import {BaseType, KeyType, ValueFn, select} from 'd3-selection'
+import {curveCatmullRom, line as lineFunc} from 'd3-shape'
+import {computed, ref, watchEffect} from 'vue'
 
 // Types
 type datum = {
@@ -43,7 +43,7 @@ watchEffect(() => {
 			keyFunction as unknown as ValueFn<BaseType, unknown, KeyType>
 		)
 		.join(
-			enter => {
+			enter =>
 				enter
 					.append('path')
 					.attr('d', line.value(props.data))
@@ -52,8 +52,7 @@ watchEffect(() => {
 					})
 					.attr('stroke-dashoffset', pathLength.value)
 					.transition(generateTransition({}))
-					.attr('stroke-dashoffset', 0)
-			},
+					.attr('stroke-dashoffset', 0),
 			update =>
 				update.attr('d', line.value(props.data)).attr('stroke-dashoffset', 0),
 			exit =>
