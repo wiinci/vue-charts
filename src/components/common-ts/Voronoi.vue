@@ -12,19 +12,18 @@ interface Datum {
 const props = defineProps<{
 	data: Datum[]
 	height: number
-	marginLeft: number
-	marginTop: number
 	width: number
 	x: ScaleTime<number, number, never>
 }>()
 
 const emit = defineEmits<{
-	(e: 'moveTo', {d, i}): void
+	'move-to': [
+		{
+			d: Datum | null
+			i: number | null
+		}
+	]
 }>()
-
-const transform = computed(
-	() => `translate(-${props.marginLeft}, -${props.marginTop})`
-)
 
 const voronoi = computed(() =>
 	delaunay.from(
@@ -34,31 +33,28 @@ const voronoi = computed(() =>
 	)
 )
 
-const pointermove = (event: PointerEvent, d: Datum[]) => {
+const handlePointerMove = (event: PointerEvent, d: Datum[]) => {
 	const [x, y] = pointer(event)
 	const i = voronoi.value.find(x, y)
-	emit('moveTo', {d: d[i], i})
+	console.log(d[i], i)
+	emit('move-to', {d: d[i], i})
 }
 
 onMounted(() => {
 	select('.voronoi')
-		.attr('transform', transform.value)
+		.attr('transform', 'translate(0, 0)')
 		.selectAll('rect')
-		.data([props.data])
+		.data([props.data], (d: Datum) => props.x(d.date))
 		.join('rect')
 		.attr('height', props.height)
 		.attr('width', props.width)
 		.attr('fill', 'none')
 		.attr('pointer-events', 'all')
-		.on('pointermove', (e, d: Datum[]) => pointermove(e, d))
-		.on('pointerleave', () => emit('moveTo', null))
+		.on('pointermove', (e, d: Datum[]) => handlePointerMove(e, d))
+		.on('pointerleave', () => emit('move-to', null))
 })
 </script>
 
 <template>
-	<g
-		class="voronoi"
-		:transform="transform"
-	/>
-	<Child />
+	<g class="voronoi" />
 </template>

@@ -2,12 +2,13 @@
 import Line from '@/components/LineChart/Line.vue'
 import Axis from '@/components/common-ts/Axis.vue'
 import Chart from '@/components/common-ts/Chart.vue'
+import Tooltip from '@/components/common-ts/Tooltip.vue'
 import Voronoi from '@/components/common-ts/Voronoi.vue'
 import {ascending, extent, max} from 'd3-array'
 import {csvParse} from 'd3-dsv'
 import {scaleLinear, scaleUtc} from 'd3-scale'
 import {timeParse} from 'd3-time-format'
-import {computed} from 'vue'
+import {computed, ref} from 'vue'
 
 // Define the type of data
 type Datum = {
@@ -68,6 +69,12 @@ const y = computed(() =>
 		[height.value, 0]
 	)
 )
+
+// Handle pointer move events to update tooltips
+const moveTo = ref({d: null, i: null})
+const handleMoveTo = ({d, i}: {d: Datum | null; i: number | null}) => {
+	moveTo.value = {d, i}
+}
 </script>
 
 <template>
@@ -77,13 +84,11 @@ const y = computed(() =>
 		:marginTop="props.marginTop"
 		:width="props.width"
 	>
-		<Voronoi
+		<Tooltip
 			:data="data"
-			:height="props.height"
-			:marginLeft="props.marginLeft"
-			:marginTop="props.marginTop"
-			:width="props.width"
-			:x="x"
+			:height="height"
+			:move-to="moveTo"
+			:width="width"
 		/>
 		<Axis
 			:y="y"
@@ -98,6 +103,13 @@ const y = computed(() =>
 			:height="height"
 			:width="width"
 			:x="x"
+		/>
+		<Voronoi
+			:data="data"
+			:height="height"
+			:width="width"
+			:x="x"
+			@move-to="handleMoveTo"
 		/>
 	</Chart>
 </template>
