@@ -25,7 +25,7 @@ const transform = ref(0)
 watch(
 	() => props.moveTo,
 	() => {
-		transform.value = x.value(props.moveTo.d.date.toUTCString())
+		transform.value = Math.round(x.value(props.moveTo.d.date.toUTCString()))
 	}
 )
 </script>
