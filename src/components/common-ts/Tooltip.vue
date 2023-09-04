@@ -11,10 +11,7 @@ const props = defineProps<{
 	data: Datum[]
 	height: number
 	width: number
-	moveTo: {
-		d: Datum
-		i: number
-	}
+	moveTo: {d: Datum}
 }>()
 
 const x = computed(() =>
@@ -41,7 +38,7 @@ watch(
 		<path
 			:d="`M0 0 V${props.height}`"
 			stroke="red"
-			strokeWidth="2"
+			strokeWidth="1px"
 		/>
 	</g>
 </template>

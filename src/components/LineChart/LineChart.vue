@@ -71,9 +71,9 @@ const y = computed(() =>
 )
 
 // Handle pointer move events to update tooltips
-const moveTo = ref({d: null, i: null})
-const handleMoveTo = ({d, i}: {d: Datum; i: number}) => {
-	moveTo.value = {d, i}
+const moveTo = ref({d: null})
+const handleMoveTo = ({d}: {d: Datum}) => {
+	moveTo.value = {d}
 }
 </script>
 

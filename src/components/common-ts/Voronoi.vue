@@ -17,12 +17,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-	'move-to': [
-		{
-			d: Datum | null
-			i: number | null
-		}
-	]
+	'move-to': [{d: Datum}]
 }>()
 
 const voronoi = computed(() =>
@@ -36,7 +31,7 @@ const voronoi = computed(() =>
 const handlePointerMove = (event: PointerEvent, d: Datum[]) => {
 	const [x, y] = pointer(event)
 	const i = voronoi.value.find(x, y)
-	emit('move-to', {d: d[i], i})
+	emit('move-to', {d: d[i]})
 }
 
 onMounted(() => {
@@ -51,7 +46,7 @@ onMounted(() => {
 		.attr('pointer-events', 'all')
 		.on('pointermove', (e, d: Datum[]) => handlePointerMove(e, d))
 		.on('pointerleave', (_, d: Datum[]) =>
-			emit('move-to', {d: d[props.data.length - 1], i: props.data.length - 1})
+			emit('move-to', {d: d[props.data.length - 1]})
 		)
 })
 </script>
