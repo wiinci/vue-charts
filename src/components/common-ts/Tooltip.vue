@@ -20,34 +20,28 @@ const props = defineProps<{
 const x = computed(() =>
 	scaleBand()
 		.domain(props.data.map(d => d.date.toUTCString()))
-		.padding(1 / 3)
+		.padding(0)
 		.range([0, props.width])
 )
 
-const index = ref(props.moveTo.i)
-const posX = computed(
-	() => index.value / (x.value.step() * index.value + x.value.bandwidth())
-)
-
+const transform = ref(0)
 watch(
 	() => props.moveTo,
 	() => {
-		index.value = props.moveTo.i!
-		console.log(x.value(props.moveTo.d!.date.toUTCString()))
+		transform.value = x.value(props.moveTo.d.date.toUTCString())
 	}
 )
 </script>
 
 <template>
 	<g
+		:transform="`translate(${transform}, 0)`"
 		class="tooltip"
-		:transform="`translate(${x.step() * index + x.bandwidth()}, 0)`"
 	>
 		<path
 			:d="`M0 0 V${props.height}`"
 			stroke="red"
 			strokeWidth="2"
-			:transform="`translate(${index / (x.step() * index + x.bandwidth())}, 0)`"
 		/>
 	</g>
 </template>

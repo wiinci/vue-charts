@@ -72,7 +72,7 @@ const y = computed(() =>
 
 // Handle pointer move events to update tooltips
 const moveTo = ref({d: null, i: null})
-const handleMoveTo = ({d, i}: {d: Datum | null; i: number | null}) => {
+const handleMoveTo = ({d, i}: {d: Datum; i: number}) => {
 	moveTo.value = {d, i}
 }
 </script>
@@ -89,6 +89,7 @@ const handleMoveTo = ({d, i}: {d: Datum | null; i: number | null}) => {
 			:height="height"
 			:move-to="moveTo"
 			:width="width"
+			v-if="moveTo.d"
 		/>
 		<Axis
 			:y="y"

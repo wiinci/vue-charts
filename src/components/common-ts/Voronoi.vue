@@ -36,7 +36,6 @@ const voronoi = computed(() =>
 const handlePointerMove = (event: PointerEvent, d: Datum[]) => {
 	const [x, y] = pointer(event)
 	const i = voronoi.value.find(x, y)
-	console.log(d[i], i)
 	emit('move-to', {d: d[i], i})
 }
 
@@ -51,7 +50,9 @@ onMounted(() => {
 		.attr('fill', 'none')
 		.attr('pointer-events', 'all')
 		.on('pointermove', (e, d: Datum[]) => handlePointerMove(e, d))
-		.on('pointerleave', () => emit('move-to', null))
+		.on('pointerleave', (_, d: Datum[]) =>
+			emit('move-to', {d: d[props.data.length - 1], i: props.data.length - 1})
+		)
 })
 </script>
 
