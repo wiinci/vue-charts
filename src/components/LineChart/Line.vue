@@ -2,8 +2,8 @@
 import {generateTransition} from '@/utils'
 import type {ScaleLinear, ScaleTime} from 'd3-scale'
 import {BaseType, KeyType, ValueFn, select} from 'd3-selection'
-import {curveCatmullRom, line as lineFunc} from 'd3-shape'
-import {computed, ref, watchEffect} from 'vue'
+import {curveStep, line as lineFunc} from 'd3-shape'
+import {computed, onMounted, ref} from 'vue'
 
 // Types
 type datum = {
@@ -13,9 +13,14 @@ type datum = {
 
 interface Props {
 	data: datum[]
+	gradientId?: string
 	x: ScaleTime<number, number, never>
 	y: ScaleLinear<number, number, never>
 }
+
+const stroke = computed(() =>
+	props.gradientId ? `url(#${props.gradientId})` : 'steelblue'
+)
 
 // Props
 const props = defineProps<Props>()
@@ -27,7 +32,7 @@ const line = computed(() =>
 		(d: datum) => props.y(d.value)
 	)
 		.defined((d: datum) => !isNaN(d.value))
-		.curve(curveCatmullRom.alpha(0.5))
+		.curve(curveStep)
 )
 
 // Select node and draw line
@@ -35,7 +40,7 @@ const lineRef = ref(null)
 const pathLength = ref(0)
 const keyFunction = (d: datum) => d.date
 
-watchEffect(() => {
+onMounted(() => {
 	select(lineRef.value)
 		.selectAll('path')
 		.data(
@@ -75,6 +80,6 @@ watchEffect(() => {
 		stroke-linecap="round"
 		stroke-linejoin="round"
 		stroke-width="1.5"
-		stroke="steelblue"
+		:stroke="stroke"
 	/>
 </template>

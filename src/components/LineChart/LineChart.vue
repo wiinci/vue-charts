@@ -2,6 +2,7 @@
 import Line from '@/components/LineChart/Line.vue'
 import Axis from '@/components/common-ts/Axis.vue'
 import Chart from '@/components/common-ts/Chart.vue'
+import Gradient from '@/components/common-ts/Gradient.vue'
 import Tooltip from '@/components/common-ts/Tooltip.vue'
 import Voronoi from '@/components/common-ts/Voronoi.vue'
 import {ascending, extent, max} from 'd3-array'
@@ -95,8 +96,18 @@ const handleMoveTo = ({d}: {d: Datum}) => {
 			:y="y"
 			:width="width"
 		/>
+		<Gradient
+			:domain="y.domain()"
+			:end="10"
+			:height="props.height"
+			:interval="1"
+			:marginBottom="props.marginBottom"
+			:marginTop="props.marginTop"
+			:start="0"
+		/>
 		<Line
 			:data="data"
+			:gradientId="'gradient'"
 			:x="x"
 			:y="y"
 		/>
