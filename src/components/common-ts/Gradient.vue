@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {ticks} from 'd3-array'
 import {scaleSequential} from 'd3-scale'
-import {interpolateTurbo} from 'd3-scale-chromatic'
+import {interpolateCool} from 'd3-scale-chromatic'
 import {select} from 'd3-selection'
 import {computed, onMounted, ref} from 'vue'
 
@@ -10,10 +10,10 @@ const props = withDefaults(
 		domain: number[]
 		end: number
 		height: number
-		interval: number
 		marginBottom: number
 		marginTop: number
 		start: number
+		ticks: number
 	}>(),
 	{
 		end: 10,
@@ -26,12 +26,12 @@ const y1 = computed(() => props.height - props.marginBottom)
 
 const gradientRef = ref<SVGLinearGradientElement | null>(null)
 
-const color = scaleSequential(interpolateTurbo).domain(props.domain)
+const color = scaleSequential(interpolateCool).domain(props.domain)
 
 onMounted(() => {
 	select(gradientRef.value)
 		.selectAll('stop')
-		.data(ticks(props.start, props.interval, props.end))
+		.data(ticks(props.start, props.end, props.ticks))
 		.join('stop')
 		.attr('offset', d => d)
 		.attr('stop-color', d => color.interpolator()(d))

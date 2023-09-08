@@ -98,12 +98,12 @@ const handleMoveTo = ({d}: {d: Datum}) => {
 		/>
 		<Gradient
 			:domain="y.domain()"
-			:end="10"
+			:end="0.8"
 			:height="props.height"
-			:interval="1"
 			:marginBottom="props.marginBottom"
 			:marginTop="props.marginTop"
 			:start="0"
+			:ticks="10"
 		/>
 		<Line
 			:data="data"
