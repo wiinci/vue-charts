@@ -10,6 +10,7 @@ const props = withDefaults(
 		domain: number[]
 		end: number
 		height: number
+		id: string
 		marginBottom: number
 		marginTop: number
 		start: number
@@ -42,8 +43,8 @@ onMounted(() => {
 	<linearGradient
 		class="gradient"
 		ref="gradientRef"
-		id="gradient"
 		gradientUnits="userSpaceOnUse"
+		:id="props.id"
 		x1="0"
 		:y1="y1"
 		x2="0"
