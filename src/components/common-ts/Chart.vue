@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import {computed} from 'vue'
+import {computed, shallowRef} from 'vue'
 
-const props = defineProps<{
-	height: number
-	marginLeft: number
-	marginTop: number
-	width: number
-}>()
+const props = shallowRef({
+	height: 500,
+	marginLeft: 50,
+	marginTop: 50,
+	width: 960,
+})
 
-const viewBox = computed(() => `0 0 ${props.width} ${props.height}`)
+const viewBox = computed(() => `0 0 ${props.value.width} ${props.value.height}`)
 const transform = computed(
-	() => `translate(${props.marginLeft}, ${props.marginTop})`
+	() => `translate(${props.value.marginLeft}, ${props.value.marginTop})`
 )
 </script>
 
@@ -38,6 +38,10 @@ const transform = computed(
 	border: 1px solid;
 	display: flex;
 	margin: 0 auto;
-	max-width: 960px;
+	max-width: var(--max-width);
+}
+
+:root {
+	--max-width: 960px;
 }
 </style>

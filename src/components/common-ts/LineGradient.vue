@@ -3,7 +3,7 @@ import {ticks} from 'd3-array'
 import {scaleSequential} from 'd3-scale'
 import {interpolateCool} from 'd3-scale-chromatic'
 import {select} from 'd3-selection'
-import {computed, onMounted, ref} from 'vue'
+import {computed, onMounted, shallowRef} from 'vue'
 
 const props = withDefaults(
 	defineProps<{
@@ -25,7 +25,7 @@ const props = withDefaults(
 
 const y1 = computed(() => props.height - props.marginBottom)
 
-const gradientRef = ref<SVGLinearGradientElement | null>(null)
+const gradientRef = shallowRef<SVGLinearGradientElement | null>(null)
 
 const color = scaleSequential(interpolateCool).domain(props.domain)
 
