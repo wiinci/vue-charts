@@ -1,7 +1,7 @@
 <script setup>
-	import Sankey from '@/components/Sankey/Sankey.vue'
 	import LineChart from '@/components/LineChart/LineChart.vue'
-	import { ref } from 'vue'
+	import Sankey from '@/components/Sankey/Sankey.vue'
+	import {ref} from 'vue'
 
 	const nodeAlign = ref('left')
 	const nodeId = ref('id')
@@ -16,7 +16,7 @@
 
 	export default {
 		setup() {
-			return { data }
+			return {data}
 		},
 	}
 </script>
