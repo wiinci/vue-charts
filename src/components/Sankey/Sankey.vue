@@ -2,7 +2,7 @@
 	import Voronoi from '@/components/common-ts/Voronoi.vue'
 	import useNodesAndLinks from '@/hooks/useNodesAndLinks'
 	import {computed, provide, ref} from 'vue'
-	import Chart from '../common/Chart.vue'
+	import Chart from '../common-ts/Chart.vue'
 	import Labels from './Labels.vue'
 	import Links from './Links.vue'
 
@@ -80,8 +80,8 @@
 <template>
 	<Chart
 		:height="height"
-		:margin-left="0"
-		:margin-top="0"
+		:marginLeft="0"
+		:marginTop="0"
 		:width="width"
 	>
 		<Links :data="links" />

@@ -29,9 +29,9 @@
 		{
 			height: 480,
 			marginBottom: 40,
-			marginLeft: 40,
+			marginLeft: 50,
 			marginRight: 20,
-			marginTop: 20,
+			marginTop: 50,
 			width: 960,
 		}
 	)
@@ -82,7 +82,6 @@
 		:width="props.width"
 	>
 		<Tooltip
-			v-if="moveTo.d"
 			:data="data"
 			:height="height"
 			:move-to="moveTo"

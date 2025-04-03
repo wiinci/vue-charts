@@ -71,16 +71,6 @@ const useNodesAndLinks = props => {
 
 	const {nodes, links} = fn.value(sankeyData)
 
-	for (const node of nodes) {
-		if (node.sourceLinks.length > 0) {
-			node.collapsed = false
-			node.collapsible = true
-			node.collapsing = 0
-		} else {
-			node.collapsible = false
-		}
-	}
-
 	return reactive({
 		chartHeight,
 		chartWidth,

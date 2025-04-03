@@ -1,21 +1,36 @@
 <script setup lang="ts">
-import {computed, shallowRef} from 'vue'
+	import {computed, defineProps} from 'vue'
 
-const props = shallowRef({
-	height: 500,
-	marginLeft: 50,
-	marginTop: 50,
-	width: 960,
-})
+	const props = withDefaults(
+		defineProps<{
+			height?: number
+			marginBottom?: number
+			marginLeft?: number
+			marginRight?: number
+			marginTop?: number
+			width?: number
+		}>(),
+		{
+			height: 480,
+			marginBottom: 40,
+			marginLeft: 50,
+			marginRight: 20,
+			marginTop: 50,
+			width: 960,
+		}
+	)
 
-const viewBox = computed(() => `0 0 ${props.value.width} ${props.value.height}`)
-const transform = computed(
-	() => `translate(${props.value.marginLeft}, ${props.value.marginTop})`
-)
+	const viewBox = computed(() => `0 0 ${props.width} ${props.height}`)
+	const transform = computed(
+		() => `translate(${props.marginLeft}, ${props.marginTop})`
+	)
 </script>
 
 <template>
-	<div :class="$style.chart">
+	<div
+		:class="$style.chart"
+		class="chart"
+	>
 		<svg
 			:viewBox="viewBox"
 			height="100%"
@@ -34,14 +49,14 @@ const transform = computed(
 </template>
 
 <style module>
-.chart {
-	border: 1px solid;
-	display: flex;
-	margin: 0 auto;
-	max-width: var(--max-width);
-}
+	.chart {
+		border: 1px solid;
+		display: flex;
+		margin: 0 auto;
+		max-width: var(--max-width);
+	}
 
-:root {
-	--max-width: 960px;
-}
+	:root {
+		--max-width: 960px;
+	}
 </style>
