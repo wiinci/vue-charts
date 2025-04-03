@@ -1,8 +1,8 @@
 <script setup>
+	import Chart from '@/components/common-ts/Chart.vue'
 	import Voronoi from '@/components/common-ts/Voronoi.vue'
 	import useNodesAndLinks from '@/hooks/useNodesAndLinks'
 	import {computed, provide, ref} from 'vue'
-	import Chart from '../common-ts/Chart.vue'
 	import Labels from './Labels.vue'
 	import Links from './Links.vue'
 
@@ -92,14 +92,13 @@
 			:width="chartWidth"
 		/>
 		<Voronoi
+			:classKey="'voronoi'"
 			:data="nodes"
 			:height="height"
-			:node-id="nodeId"
 			:width="width"
-			:x-accessor="xAccessor"
-			:y-accessor="yAccessor"
+			:xAccessor="xAccessor"
+			:yAccessor="yAccessor"
 			@move-to="highlightLinks"
-			key="voronoi"
 		/>
 	</Chart>
 </template>

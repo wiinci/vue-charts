@@ -113,13 +113,12 @@
 			:x="x"
 		/>
 		<Voronoi
+			:classKey="'linechart'"
 			:data="data"
 			:height="height"
 			:width="width"
-			:x="x"
 			:xAccessor="xAccessor"
 			@move-to="handleMoveTo"
-			key="linechart"
 		/>
 	</Chart>
 </template>

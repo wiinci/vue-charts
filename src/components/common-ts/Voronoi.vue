@@ -9,6 +9,7 @@
 	}
 
 	const props = defineProps<{
+		classKey: string
 		data: Datum[]
 		height: number
 		width: number
@@ -38,7 +39,7 @@
 	}
 
 	onMounted(() => {
-		select('.voronoi')
+		select(`.voronoi.${props.classKey}`)
 			.attr('transform', 'translate(0, 0)')
 			.selectAll('rect')
 			.data([props.data], (d: Datum) => props.xAccessor(d))
@@ -55,5 +56,8 @@
 </script>
 
 <template>
-	<g class="voronoi" />
+	<g
+		:class="classKey"
+		class="voronoi"
+	/>
 </template>
