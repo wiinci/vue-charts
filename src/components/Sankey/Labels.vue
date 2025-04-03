@@ -16,44 +16,16 @@
 			required: true,
 			type: Number,
 		},
-		toggledId: {
-			required: true,
-			type: String,
-		},
-		toggledState: {
-			required: true,
-			type: Boolean,
-		},
 		width: {
 			required: true,
 			type: Number,
 		},
 	})
 
-	const emit = defineEmits(['nodes:hidden'])
-
 	const nodeRef = ref(null)
 
-	const nodesToToggle = n => {
-		const toggled = []
-		if (n.sourceLinks?.length > 0) {
-			for (const node of n.sourceLinks) {
-				toggled.push(node.target.id, ...nodesToToggle(node.target))
-			}
-		}
-		return toggled
-	}
-
 	watchEffect(() => {
-		const {data, nodeId, nodeWidth, toggledId, toggledState, width} =
-			proxyRefs(props)
-		const toggledNode = data.find(d => d.id === toggledId)
-		if (toggledNode) {
-			toggledNode.collapsed = toggledState
-
-			const toggledNodes = toggledState ? nodesToToggle(toggledNode) : []
-			emit('nodes:hidden', toggledNodes)
-		}
+		const {data, nodeId, nodeWidth, width} = proxyRefs(props)
 
 		select(nodeRef.value)
 			.selectAll('text')
@@ -85,8 +57,7 @@
 								.delay(d => constants.duration.short * (d.depth + 1))
 								.attr('opacity', 1)
 						),
-				update =>
-					update.text(d => (toggledNodes.includes(d.id) ? null : d[nodeId])),
+				update => update.text(d => d[nodeId]),
 				exit => exit.remove()
 			)
 	})

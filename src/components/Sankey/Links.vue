@@ -12,10 +12,6 @@
 			type: Array,
 			required: true,
 		},
-		hiddenNodes: {
-			required: true,
-			type: Array,
-		},
 	})
 
 	const nodeRef = ref(null)
@@ -48,10 +44,9 @@
 	const labelHoverDatum = inject('labelDatum')
 	const labelHoverId = inject('labelId')
 	const isHovered = computed(() => labelHoverId.value !== '')
-	const hasHiddenNodes = computed(() => hiddenNodes.value.length > 0)
 
 	watchEffect(() => {
-		const {data, hiddenNodes} = proxyRefs(props)
+		const {data} = proxyRefs(props)
 
 		source.value = []
 		target.value = []
@@ -80,46 +75,37 @@
 				exit => exit.remove()
 			)
 			.attr('stroke', d =>
-				hasHiddenNodes &&
-				hiddenNodes.find(n => n === d.source.id || n === d.target.id)
-					? 'transparent'
-					: highlightLinks({
-							d,
-							falseCase: constants.linkColor,
-							isHovered,
-							labelHoverId: labelHoverId.value,
-							source,
-							target,
-							trueCase: constants.linkColorHighlight,
-					  })
+				highlightLinks({
+					d,
+					falseCase: constants.linkColor,
+					isHovered,
+					labelHoverId: labelHoverId.value,
+					source,
+					target,
+					trueCase: constants.linkColorHighlight,
+				})
 			)
 			.attr('stroke-width', d =>
-				hasHiddenNodes &&
-				hiddenNodes.find(n => n === d.source.id || n === d.target.id)
-					? 0
-					: highlightLinks({
-							d,
-							falseCase: 1,
-							isHovered,
-							labelHoverId: labelHoverId.value,
-							source,
-							target,
-							trueCase: 1.5,
-					  })
+				highlightLinks({
+					d,
+					falseCase: 1,
+					isHovered,
+					labelHoverId: labelHoverId.value,
+					source,
+					target,
+					trueCase: 1.5,
+				})
 			)
 			.classed('raise', d =>
-				hasHiddenNodes &&
-				hiddenNodes.find(n => n === d.source.id || n === d.target.id)
-					? true
-					: highlightLinks({
-							d,
-							falseCase: false,
-							isHovered,
-							labelHoverId: labelHoverId.value,
-							source,
-							target,
-							trueCase: true,
-					  })
+				highlightLinks({
+					d,
+					falseCase: false,
+					isHovered,
+					labelHoverId: labelHoverId.value,
+					source,
+					target,
+					trueCase: true,
+				})
 			)
 
 		select(nodeRef.value).selectAll('path.raise').raise()

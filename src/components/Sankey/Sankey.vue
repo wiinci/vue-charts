@@ -63,23 +63,12 @@
 
 	const labelDatum = ref({})
 	const labelId = ref('')
-	const toggledId = ref('')
-	const hiddenNodes = ref([])
-	const toggledState = ref(false)
-
-	const labelClick = d => {
-		if (typeof d === 'object' && d.collapsible) {
-			toggledId.value = d.id
-			toggledState.value = d.collapsed ? false : true
-		}
-	}
 
 	const highlightLinks = ({d}) => {
 		labelId.value = typeof d === 'object' ? d.id : ''
 		labelDatum.value = typeof d === 'object' ? d : {}
 	}
 
-	const hideNodes = nodes => (hiddenNodes.value = nodes)
 	const xAccessor = computed(() => d => d.x0)
 	const yAccessor = computed(() => d => d.y0)
 
@@ -95,18 +84,12 @@
 		:margin-top="0"
 		:width="width"
 	>
-		<Links
-			:data="links"
-			:hiddenNodes="hiddenNodes"
-		/>
+		<Links :data="links" />
 		<Labels
 			:data="nodes"
 			:node-id="nodeId"
 			:node-width="nodeWidth"
-			:toggled-id="toggledId"
-			:toggled-state="toggledState"
 			:width="chartWidth"
-			@nodes:hidden="hideNodes"
 		/>
 		<Voronoi
 			:data="nodes"

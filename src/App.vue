@@ -11,8 +11,10 @@
 </script>
 
 <script>
-	const sankeyData = (await import('@/data/edges2.json')).default
-	const lineData = (await import('@/data/aapl.csv?raw')).default
+	const s = (await import('@/data/edges2.json')).default
+	const sankeyData = Object.freeze(s)
+	const l = (await import('@/data/aapl.csv?raw')).default
+	const lineData = Object.freeze(l)
 
 	export default {
 		setup() {
