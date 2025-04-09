@@ -1,6 +1,8 @@
 <script setup>
 	import LineChart from '@/components/LineChart/LineChart.vue'
 	import Sankey from '@/components/Sankey/Sankey.vue'
+	import aaplCsvData from '@/data/aapl.csv?raw'
+	import sankeyJsonData from '@/data/edges2.json'
 	import {ref} from 'vue'
 
 	const nodeAlign = ref('left')
@@ -8,31 +10,29 @@
 	const nodePadding = ref(1e9)
 	const nodeWidth = ref(1e-9)
 	const sort = ref(false)
-</script>
-
-<script>
-	const s = (await import('@/data/edges2.json')).default
-	const sankeyData = Object.freeze(s)
-	const l = (await import('@/data/aapl.csv?raw')).default
-	const lineData = Object.freeze(l)
-
-	export default {
-		setup() {
-			return {data}
-		},
-	}
+	const sankeyData = Object.freeze(sankeyJsonData)
+	const lineData = Object.freeze(aaplCsvData)
 </script>
 
 <template>
-	<Sankey
-		:data="sankeyData"
-		:node-align="nodeAlign"
-		:node-id="nodeId"
-		:node-padding="nodePadding"
-		:node-width="nodeWidth"
-		:sort="sort"
-	/>
-	<LineChart :data="lineData" />
+	<Suspense>
+		<template #default>
+			<div>
+				<Sankey
+					:data="sankeyData"
+					:node-align="nodeAlign"
+					:node-id="nodeId"
+					:node-padding="nodePadding"
+					:node-width="nodeWidth"
+					:sort="sort"
+				/>
+				<LineChart :data="lineData" />
+			</div>
+		</template>
+		<template #fallback>
+			<div>Loading &hellip;</div>
+		</template>
+	</Suspense>
 </template>
 
 <style>
