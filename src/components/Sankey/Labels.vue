@@ -1,7 +1,7 @@
 <script setup>
 	import {constants} from '@/assets/constants'
 	import {select} from 'd3-selection'
-	import {proxyRefs, ref, watchEffect} from 'vue'
+	import {ref, watchEffect, computed} from 'vue'
 
 	const props = defineProps({
 		data: {
@@ -24,32 +24,38 @@
 
 	const nodeRef = ref(null)
 
+	// Memoize calculations
+	const getTextAnchor = computed(
+		() => d => d.x0 < props.width / 2 ? 'start' : 'end'
+	)
+	const getXPosition = computed(() => d => {
+		if (props.nodeWidth < 1) return d.x0
+		return d.x0 < props.width / 2
+			? d.x0 + props.nodeWidth
+			: d.x1 - props.nodeWidth
+	})
+	const getYPosition = computed(() => d => (d.y1 + d.y0) / 2)
+
 	watchEffect(() => {
-		const {data, nodeId, nodeWidth, width} = proxyRefs(props)
+		if (!nodeRef.value) return
 
 		select(nodeRef.value)
 			.selectAll('text')
-			.data(data, d => d[nodeId])
+			.data(props.data, d => d[props.nodeId])
 			.join(
 				enter =>
 					enter
 						.append('text')
-						.text(d => d[nodeId])
+						.text(d => d[props.nodeId])
 						.attr('dominant-baseline', 'middle')
 						.attr('paint-order', 'stroke')
 						.attr('stroke-linecap', 'round')
 						.attr('stroke-linejoin', 'round')
 						.attr('stroke-width', '6')
 						.attr('stroke', 'white')
-						.attr('text-anchor', d => (d.x0 < width / 2 ? 'start' : 'end'))
-						.attr('x', d =>
-							nodeWidth < 1
-								? d.x0
-								: d.x0 < width / 2
-								? d.x0 + nodeWidth
-								: d.x1 - nodeWidth
-						)
-						.attr('y', d => (d.y1 + d.y0) / 2)
+						.attr('text-anchor', getTextAnchor.value)
+						.attr('x', getXPosition.value)
+						.attr('y', getYPosition.value)
 						.attr('opacity', 1e-9)
 						.call(enter =>
 							enter
@@ -57,8 +63,8 @@
 								.delay(d => constants.duration.short * (d.depth + 1))
 								.attr('opacity', 1)
 						),
-				update => update.text(d => d[nodeId]),
-				exit => exit.remove()
+				update => update.text(d => d[props.nodeId]),
+				exit => exit.transition().attr('opacity', 0).remove()
 			)
 	})
 </script>

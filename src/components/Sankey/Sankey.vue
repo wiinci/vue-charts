@@ -5,6 +5,7 @@
 	import {computed, provide, ref} from 'vue'
 	import Labels from './Labels.vue'
 	import Links from './Links.vue'
+	import Nodes from './Nodes.vue'
 
 	const props = defineProps({
 		data: {
@@ -64,17 +65,18 @@
 	const labelDatum = ref({})
 	const labelId = ref('')
 
+	// Memoize accessors
+	const xAccessor = computed(() => d => d.x0)
+	const yAccessor = computed(() => d => d.y0)
+
+	// Provide context to child components
+	provide('labelDatum', labelDatum)
+	provide('labelId', labelId)
+
 	const highlightLinks = ({d}) => {
 		labelId.value = typeof d === 'object' ? d.id : ''
 		labelDatum.value = typeof d === 'object' ? d : {}
 	}
-
-	const xAccessor = computed(() => d => d.x0)
-	const yAccessor = computed(() => d => d.y0)
-
-	// Hover (links)
-	provide('labelDatum', labelDatum)
-	provide('labelId', labelId)
 </script>
 
 <template>
@@ -85,6 +87,12 @@
 		:width="width"
 	>
 		<Links :data="links" />
+		<Nodes
+			:data="nodes"
+			:nodeId="nodeId"
+			:xAccessor="xAccessor"
+			:yAccessor="yAccessor"
+		/>
 		<Labels
 			:data="nodes"
 			:node-id="nodeId"
@@ -92,7 +100,7 @@
 			:width="chartWidth"
 		/>
 		<Voronoi
-			:classKey="'voronoi'"
+			:classKey="'sankey'"
 			:data="nodes"
 			:height="height"
 			:width="width"

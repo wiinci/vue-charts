@@ -1,11 +1,12 @@
 <script setup lang="ts">
 	import {Delaunay as delaunay} from 'd3-delaunay'
 	import {pointer, select} from 'd3-selection'
-	import {computed, onMounted, proxyRefs} from 'vue'
+	import {computed, onMounted, ref, watch} from 'vue'
 
 	interface Datum {
 		date: Date
 		value: number
+		[key: string]: any
 	}
 
 	const props = defineProps<{
@@ -21,43 +22,54 @@
 		'move-to': [{d: Datum}]
 	}>()
 
-	const {data, xAccessor, yAccessor} = proxyRefs(props)
+	const voronoiRef = ref<SVGGElement | null>(null)
+
+	// Memoize the Delaunay computation
 	const voronoi = computed(() =>
 		delaunay.from(
-			data,
-			d => xAccessor(d),
-			yAccessor ? d => yAccessor(d) : () => 0
+			props.data,
+			d => props.xAccessor(d),
+			props.yAccessor ? d => props.yAccessor!(d) : () => 0
 		)
 	)
 
-	const handlePointerMove = (event: PointerEvent, d: Datum[]) => {
+	const handlePointerMove = (event: PointerEvent, data: Datum[]) => {
 		const [x, y] = pointer(event)
 		const i = voronoi.value.find(x, y)
 		if (i !== undefined) {
-			emit('move-to', {d: d[i]})
+			emit('move-to', {d: data[i]})
 		}
 	}
 
 	onMounted(() => {
-		select(`.voronoi.${props.classKey}`)
-			.attr('transform', 'translate(0, 0)')
+		renderVoronoi()
+	})
+
+	watch(() => props.data, renderVoronoi, {deep: true})
+
+	function renderVoronoi() {
+		if (!voronoiRef.value) return
+
+		select(voronoiRef.value)
 			.selectAll('rect')
-			.data([props.data], (d: Datum) => props.xAccessor(d))
+			.data([props.data])
 			.join('rect')
 			.attr('height', props.height)
 			.attr('width', props.width)
 			.attr('fill', 'none')
 			.attr('pointer-events', 'all')
-			.on('pointermove', (e, d: Datum[]) => handlePointerMove(e, d))
-			.on('pointerleave', (_, d: Datum[]) =>
-				emit('move-to', {d: d[props.data.length - 1]})
+			.on('pointermove', (e: PointerEvent, d: Datum[]) =>
+				handlePointerMove(e, d)
 			)
-	})
+			.on('pointerleave', () =>
+				emit('move-to', {d: props.data[props.data.length - 1]})
+			)
+	}
 </script>
 
 <template>
 	<g
-		:class="classKey"
-		class="voronoi"
+		:class="[classKey, 'voronoi']"
+		ref="voronoiRef"
 	/>
 </template>

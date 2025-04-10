@@ -5,7 +5,7 @@
 	import {select} from 'd3-selection'
 	import {linkHorizontal} from 'd3-shape'
 	import {transition} from 'd3-transition'
-	import {computed, inject, proxyRefs, ref, watchEffect} from 'vue'
+	import {computed, inject, ref, watchEffect} from 'vue'
 
 	const props = defineProps({
 		data: {
@@ -16,28 +16,32 @@
 
 	const nodeRef = ref(null)
 
-	const linkAccessor = linkHorizontal()
+	// Pre-compute link accessors for better performance
+	const initialLinkAccessor = linkHorizontal()
 		.source(d => [d.source.x0, d.source.y0])
 		.target(d => [d.source.x0, d.source.y0])
+
+	const finalLinkAccessor = sankeyLinkHorizontal()
 
 	const source = ref([])
 	const target = ref([])
 
-	const sources = d => {
-		if (d.sourceLinks.length > 0) {
-			for (const link of d.sourceLinks) {
-				target.value.push(link.target.id)
-				sources(link.target)
-			}
+	// Memoize traversal functions
+	const collectSources = d => {
+		if (!d.sourceLinks?.length) return
+
+		for (const link of d.sourceLinks) {
+			target.value.push(link.target.id)
+			collectSources(link.target)
 		}
 	}
 
-	const targets = d => {
-		if (d.targetLinks.length > 0) {
-			for (const link of d.targetLinks) {
-				source.value.push(link.source.id)
-				targets(link.source)
-			}
+	const collectTargets = d => {
+		if (!d.targetLinks?.length) return
+
+		for (const link of d.targetLinks) {
+			source.value.push(link.source.id)
+			collectTargets(link.source)
 		}
 	}
 
@@ -46,15 +50,25 @@
 	const isHovered = computed(() => labelHoverId.value !== '')
 
 	watchEffect(() => {
-		const {data} = proxyRefs(props)
+		if (!nodeRef.value) return
 
+		const data = props.data
+
+		// Reset collections before recalculating
 		source.value = []
 		target.value = []
 
-		if (typeof labelHoverDatum.value.id !== 'undefined') {
-			sources(labelHoverDatum.value)
-			targets(labelHoverDatum.value)
+		// Only traverse when we have a valid hover datum
+		if (
+			labelHoverDatum.value &&
+			typeof labelHoverDatum.value.id !== 'undefined'
+		) {
+			collectSources(labelHoverDatum.value)
+			collectTargets(labelHoverDatum.value)
 		}
+
+		// Create the transition once
+		const t = transition().duration(constants.duration.short)
 
 		select(nodeRef.value)
 			.selectAll('path')
@@ -63,13 +77,13 @@
 				enter =>
 					enter
 						.append('path')
-						.attr('d', d => linkAccessor(d))
+						.attr('d', initialLinkAccessor)
 						.attr('stroke-width', d => Math.max(1, d.width))
 						.call(enter =>
 							enter
-								.transition(transition().duration(constants.duration.short))
+								.transition(t)
 								.delay(d => constants.duration.short * (d.source.depth + 1))
-								.attr('d', sankeyLinkHorizontal())
+								.attr('d', finalLinkAccessor)
 						),
 				update => update,
 				exit => exit.remove()
