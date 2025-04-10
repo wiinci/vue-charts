@@ -1,7 +1,7 @@
 <script setup>
 	import {constants} from '@/assets/constants'
 	import {select} from 'd3-selection'
-	import {onMounted, ref, watchEffect, proxyRefs} from 'vue'
+	import {proxyRefs, ref, watchEffect} from 'vue'
 
 	const props = defineProps({
 		data: {
