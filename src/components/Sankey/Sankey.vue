@@ -90,12 +90,14 @@
 		links
 			.filter(link => {
 				// Compare as strings to handle all node ID formats
-				const sourceId = typeof link.source === 'object' ? link.source.id : link.source
+				const sourceId =
+					typeof link.source === 'object' ? link.source.id : link.source
 				return sourceId === nodeId
 			})
 			.forEach(link => {
 				// Get the target node ID
-				const targetId = typeof link.target === 'object' ? link.target.id : link.target
+				const targetId =
+					typeof link.target === 'object' ? link.target.id : link.target
 				// Add the target node to the visited set if not already visited
 				if (!visited.has(targetId)) {
 					visited.add(targetId)
@@ -107,31 +109,141 @@
 		return visited
 	}
 
-	// Additional debug function to validate the collapse/expand recursion
-	const debugTraversal = nodeId => {
-		console.log(`Traversing from node: ${nodeId}`)
-		const downstream = collectDownstreamNodes(nodeId)
-		console.log(
-			`Found ${downstream.size} downstream nodes:`,
-			Array.from(downstream)
-		)
-		return downstream
+	// Find all root sources in the graph (nodes with no incoming links)
+	const findRootSources = () => {
+		const rootSources = new Set()
+		nodes.forEach(node => {
+			if (!node.targetLinks || node.targetLinks.length === 0) {
+				rootSources.add(node.id)
+			}
+		})
+		return rootSources
 	}
 
-	// Function to toggle collapse/expand on node click with improved handling
+	// Find the root source(s) of a specific node by tracing back through its incoming links
+	const findNodeRootSources = (nodeId, visited = new Set()) => {
+		visited.add(nodeId)
+		const node = nodes.find(n => n.id === nodeId)
+		if (!node) return new Set()
+
+		// If this is a root node (no incoming links), return itself
+		if (!node.targetLinks || node.targetLinks.length === 0) {
+			return new Set([nodeId])
+		}
+
+		// Otherwise, recursively find the root sources of all its incoming links
+		const rootSources = new Set()
+		node.targetLinks.forEach(link => {
+			const sourceId =
+				typeof link.source === 'object' ? link.source.id : link.source
+			if (!visited.has(sourceId)) {
+				const sourceRoots = findNodeRootSources(sourceId, visited)
+				sourceRoots.forEach(root => rootSources.add(root))
+			}
+		})
+
+		return rootSources
+	}
+
+	// Function to toggle collapse/expand on node click with improved handling for multiple sources
 	const toggleCollapse = node => {
 		// Use the node's id for identification
 		const nodeId = node.id || node
 
-		// Collect all downstream nodes
-		const downstreamNodes = collectDownstreamNodes(nodeId)
-
 		if (collapsedNodes.value.has(nodeId)) {
-			// Expand: Remove the current node and all its downstream nodes from the collapsed set
-			downstreamNodes.forEach(id => collapsedNodes.value.delete(id))
+			// EXPAND: Remove this node from the collapsed set
+			collapsedNodes.value.delete(nodeId)
+
+			// Process expansion recursively to handle all downstream nodes
+			const processExpansion = nodesToCheck => {
+				// Track newly expanded nodes to check their downstream nodes in the next round
+				const newlyExpandedNodes = []
+
+				// Check each node to see if it should be expanded
+				nodesToCheck.forEach(nId => {
+					const node = nodes.find(n => n.id === nId)
+					if (!node || !node.targetLinks || !collapsedNodes.value.has(nId)) {
+						return // Skip if not found, no target links, or already expanded
+					}
+
+					// Check if all source nodes for this node are now expanded
+					const allSourcesExpanded = node.targetLinks.every(link => {
+						const sourceId =
+							typeof link.source === 'object' ? link.source.id : link.source
+						return !collapsedNodes.value.has(sourceId)
+					})
+
+					// If all sources are expanded, we can remove this node from collapsed set
+					if (allSourcesExpanded) {
+						collapsedNodes.value.delete(nId)
+						newlyExpandedNodes.push(nId)
+
+						// Also collect its direct downstream nodes for the next round
+						node.sourceLinks?.forEach(link => {
+							const targetId =
+								typeof link.target === 'object' ? link.target.id : link.target
+							if (collapsedNodes.value.has(targetId)) {
+								newlyExpandedNodes.push(targetId)
+							}
+						})
+					}
+				})
+
+				// If we expanded any nodes, recursively check their downstream nodes
+				if (newlyExpandedNodes.length > 0) {
+					processExpansion(newlyExpandedNodes)
+				}
+			}
+
+			// Start the recursive expansion with direct downstream nodes
+			const directDownstream = []
+			const expandedNode = nodes.find(n => n.id === nodeId)
+			if (expandedNode && expandedNode.sourceLinks) {
+				expandedNode.sourceLinks.forEach(link => {
+					const targetId =
+						typeof link.target === 'object' ? link.target.id : link.target
+					directDownstream.push(targetId)
+				})
+			}
+
+			processExpansion(directDownstream)
 		} else {
-			// Collapse: Add the current node and all its downstream nodes to the collapsed set
-			downstreamNodes.forEach(id => collapsedNodes.value.add(id))
+			// COLLAPSE: Add the node to the collapsed set
+			collapsedNodes.value.add(nodeId)
+
+			// Get all downstream nodes
+			const downstreamNodes = collectDownstreamNodes(nodeId)
+
+			// Find the root sources of the node being collapsed
+			const nodeRootSources = findNodeRootSources(nodeId)
+
+			// For each downstream node, determine if it should be collapsed
+			downstreamNodes.forEach(id => {
+				if (id !== nodeId) {
+					// Skip the original node we just processed
+					// Find all root sources that can reach this downstream node
+					const downstreamNodeRootSources = findNodeRootSources(id)
+
+					// Check if all root sources of this node are also root sources of the collapsed node
+					// If so, this node is exclusively dependent on the collapsed subtree and should be collapsed
+					let shouldCollapse = true
+
+					downstreamNodeRootSources.forEach(rootSource => {
+						// If this root source is not in the collapsed node's root sources,
+						// then this downstream node has an independent path and should remain visible
+						if (
+							!nodeRootSources.has(rootSource) &&
+							!collapsedNodes.value.has(rootSource)
+						) {
+							shouldCollapse = false
+						}
+					})
+
+					if (shouldCollapse) {
+						collapsedNodes.value.add(id)
+					}
+				}
+			})
 		}
 	}
 

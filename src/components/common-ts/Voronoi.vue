@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import {Delaunay as delaunay} from 'd3-delaunay'
 	import {pointer, select} from 'd3-selection'
-	import {computed, onMounted, ref, watch} from 'vue'
+	import {computed, ref, watchEffect} from 'vue'
 
 	interface Datum {
 		date: Date
@@ -51,13 +51,7 @@
 		}
 	}
 
-	onMounted(() => {
-		renderVoronoi()
-	})
-
-	watch(() => props.data, renderVoronoi, {deep: true})
-
-	function renderVoronoi() {
+	watchEffect(() => {
 		if (!voronoiRef.value) return
 
 		select(voronoiRef.value)
@@ -75,7 +69,7 @@
 				emit('move-to', {d: props.data[props.data.length - 1]})
 			)
 			.on('click', (e: PointerEvent, d: Datum[]) => handleClick(e, d))
-	}
+	})
 </script>
 
 <template>

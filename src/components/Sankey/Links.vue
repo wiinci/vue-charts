@@ -36,7 +36,10 @@
 
 		for (const link of d.sourceLinks) {
 			target.value.push(link.target.id)
-			collectSources(link.target)
+			// Stop traversal if the target node is collapsed
+			if (!props.collapsedNodes.has(link.target.id)) {
+				collectSources(link.target)
+			}
 		}
 	}
 
@@ -45,7 +48,10 @@
 
 		for (const link of d.targetLinks) {
 			source.value.push(link.source.id)
-			collectTargets(link.source)
+			// Stop traversal if the source node is collapsed
+			if (!props.collapsedNodes.has(link.source.id)) {
+				collectTargets(link.source)
+			}
 		}
 	}
 
@@ -98,7 +104,7 @@
 								.attr('d', finalLinkAccessor)
 						),
 				update => update,
-				exit => exit.remove()
+				exit => exit.transition(t).attr('d', initialLinkAccessor).remove()
 			)
 			.attr('stroke', d =>
 				highlightLinks({
@@ -109,6 +115,7 @@
 					source,
 					target,
 					trueCase: constants.linkColorHighlight,
+					collapsedNodes: props.collapsedNodes,
 				})
 			)
 			.attr('stroke-width', d =>
@@ -120,6 +127,7 @@
 					source,
 					target,
 					trueCase: 1.5,
+					collapsedNodes: props.collapsedNodes,
 				})
 			)
 			.classed('raise', d =>
@@ -131,6 +139,7 @@
 					source,
 					target,
 					trueCase: true,
+					collapsedNodes: props.collapsedNodes,
 				})
 			)
 

@@ -7,36 +7,45 @@
  * @param {Array} source - All (upstream) sources of the node that is hovered.
  * @param {Array} target - All (downstream) targets of the node that is hovered.
  * @param {Boolean | String} trueCase - The value to return if the condition is true.
+ * @param {Set} [collapsedNodes] - Set of collapsed node IDs.
  * @returns {Boolean | String}
  *
  */
 
 function highlightLinks({
-  d,
-  falseCase,
-  isHovered,
-  labelHoverId,
-  source,
-  target,
-  trueCase,
+	d,
+	falseCase,
+	isHovered,
+	labelHoverId,
+	source,
+	target,
+	trueCase,
+	collapsedNodes = new Set(),
 }) {
-  if (isHovered) {
-    if (d.source.id === labelHoverId || d.target.id === labelHoverId) {
-      return trueCase;
-    }
-    for (const id of target.value) {
-      if (id === d.source.id) {
-        return trueCase;
-      }
-    }
-    for (const id of source.value) {
-      if (id === d.target.id) {
-        return trueCase;
-      }
-    }
-  }
+	if (isHovered) {
+		// Direct connection to hovered node
+		if (d.source.id === labelHoverId || d.target.id === labelHoverId) {
+			return trueCase
+		}
 
-  return falseCase;
+		// Only highlight downstream links if the hovered node isn't collapsed
+		if (!collapsedNodes.has(labelHoverId)) {
+			for (const id of target.value) {
+				if (id === d.source.id) {
+					return trueCase
+				}
+			}
+		}
+
+		// Only highlight upstream links
+		for (const id of source.value) {
+			if (id === d.target.id) {
+				return trueCase
+			}
+		}
+	}
+
+	return falseCase
 }
 
-export default highlightLinks;
+export default highlightLinks

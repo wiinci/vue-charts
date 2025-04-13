@@ -1,7 +1,8 @@
 <script setup>
 	import {constants} from '@/assets/constants'
 	import {select} from 'd3-selection'
-	import {ref, watchEffect, computed} from 'vue'
+	import {transition} from 'd3-transition'
+	import {computed, ref, watchEffect} from 'vue'
 
 	const props = defineProps({
 		data: {
@@ -106,6 +107,9 @@
 	watchEffect(() => {
 		if (!nodeRef.value) return
 
+		// Create a fresh transition for each effect run
+		const t = transition().duration(constants.duration.short)
+
 		select(nodeRef.value)
 			.selectAll('text')
 			.data(filteredData.value, d => d[props.nodeId])
@@ -126,12 +130,12 @@
 						.attr('opacity', 1e-9)
 						.call(enter =>
 							enter
-								.transition()
+								.transition(t)
 								.delay(d => constants.duration.short * (d.depth + 1))
 								.attr('opacity', 1)
 						),
 				update => update.text(d => d[props.nodeId]),
-				exit => exit.transition().attr('opacity', 0).remove()
+				exit => exit.remove()
 			)
 	})
 </script>
