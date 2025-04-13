@@ -40,9 +40,52 @@
 	})
 	const getYPosition = computed(() => d => (d.y1 + d.y0) / 2)
 
-	// Filter data to exclude nodes that are collapsed
+	// Update the filteredData computation to properly identify root collapsed nodes
 	const filteredData = computed(() => {
-		return props.data.filter(node => !props.collapsedNodes.has(node.id))
+		// If no nodes are collapsed, show all labels
+		if (props.collapsedNodes.size === 0) {
+			return props.data
+		}
+
+		// Create a set to track root collapsed nodes
+		const rootCollapsedNodes = new Set()
+
+		// Process each node to identify root collapsed nodes
+		props.data.forEach(node => {
+			if (props.collapsedNodes.has(node.id)) {
+				// A root collapsed node is one that doesn't have any upstream collapsed nodes
+				// but has downstream collapsed nodes
+
+				// Check if any upstream nodes (sources) are collapsed
+				const hasCollapsedUpstream =
+					node.targetLinks &&
+					node.targetLinks.some(link =>
+						props.collapsedNodes.has(link.source.id)
+					)
+
+				// If this node has no collapsed upstream nodes, it's a root collapsed node
+				if (!hasCollapsedUpstream) {
+					rootCollapsedNodes.add(node.id)
+				}
+			}
+		})
+
+		// Filter the nodes to keep:
+		// 1. All non-collapsed nodes
+		// 2. Root collapsed nodes
+		return props.data.filter(node => {
+			// Keep all non-collapsed nodes
+			if (!props.collapsedNodes.has(node.id)) {
+				return true
+			}
+
+			// Keep root collapsed nodes
+			if (rootCollapsedNodes.has(node.id)) {
+				return true
+			}
+
+			return false
+		})
 	})
 
 	watchEffect(() => {

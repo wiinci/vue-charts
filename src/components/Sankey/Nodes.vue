@@ -28,23 +28,52 @@
 
 	const nodeRef = ref(null)
 
-	// Update the filteredData to ensure source and target properties are properly accessed
+	// Update the filteredData to properly identify root collapsed nodes
 	const filteredData = computed(() => {
-		const visibleNodes = new Set()
+		// If no nodes are collapsed, show all nodes
+		if (props.collapsedNodes.size === 0) {
+			return props.data
+		}
 
-		// Add all nodes that are part of visible links
-		props.data.forEach(link => {
-			if (
-				link.source &&
-				link.target &&
-				!props.collapsedNodes.has(link.source.id)
-			) {
-				visibleNodes.add(link.source.id)
-				visibleNodes.add(link.target.id)
+		// Create a set to track root collapsed nodes
+		const rootCollapsedNodes = new Set()
+
+		// Process each node to identify root collapsed nodes
+		props.data.forEach(node => {
+			if (props.collapsedNodes.has(node.id)) {
+				// A root collapsed node is one that doesn't have any upstream collapsed nodes
+				// but has downstream collapsed nodes
+
+				// Check if any upstream nodes (sources) are collapsed
+				const hasCollapsedUpstream =
+					node.targetLinks &&
+					node.targetLinks.some(link =>
+						props.collapsedNodes.has(link.source.id)
+					)
+
+				// If this node has no collapsed upstream nodes, it's a root collapsed node
+				if (!hasCollapsedUpstream) {
+					rootCollapsedNodes.add(node.id)
+				}
 			}
 		})
 
-		return props.data.filter(node => visibleNodes.has(node.id))
+		// Filter the nodes to keep:
+		// 1. All non-collapsed nodes
+		// 2. Root collapsed nodes
+		return props.data.filter(node => {
+			// Keep all non-collapsed nodes
+			if (!props.collapsedNodes.has(node.id)) {
+				return true
+			}
+
+			// Keep root collapsed nodes
+			if (rootCollapsedNodes.has(node.id)) {
+				return true
+			}
+
+			return false
+		})
 	})
 
 	// Reactively update when dependencies change

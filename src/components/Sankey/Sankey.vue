@@ -83,28 +83,54 @@
 
 	// Function to recursively collect all downstream nodes and links from a given node
 	const collectDownstreamNodes = (nodeId, visited = new Set()) => {
-		if (visited.has(nodeId)) return visited
+		// Add the current node to the visited set
 		visited.add(nodeId)
 
+		// Find all links where the current node is the source
 		links
-			.filter(link => link.source.id === nodeId) // Traverse only downstream links
+			.filter(link => {
+				// Compare as strings to handle all node ID formats
+				const sourceId = typeof link.source === 'object' ? link.source.id : link.source
+				return sourceId === nodeId
+			})
 			.forEach(link => {
-				visited.add(link.target.id) // Include the immediate target node
-				collectDownstreamNodes(link.target.id, visited)
+				// Get the target node ID
+				const targetId = typeof link.target === 'object' ? link.target.id : link.target
+				// Add the target node to the visited set if not already visited
+				if (!visited.has(targetId)) {
+					visited.add(targetId)
+					// Recursively collect all downstream nodes of this target
+					collectDownstreamNodes(targetId, visited)
+				}
 			})
 
 		return visited
 	}
 
-	// Function to toggle collapse/expand on node click
-	const toggleCollapse = node => {
-		const downstreamNodes = collectDownstreamNodes(node.id)
+	// Additional debug function to validate the collapse/expand recursion
+	const debugTraversal = nodeId => {
+		console.log(`Traversing from node: ${nodeId}`)
+		const downstream = collectDownstreamNodes(nodeId)
+		console.log(
+			`Found ${downstream.size} downstream nodes:`,
+			Array.from(downstream)
+		)
+		return downstream
+	}
 
-		if (collapsedNodes.value.has(node.id)) {
-			// Expand: Remove all downstream nodes from the collapsed set
+	// Function to toggle collapse/expand on node click with improved handling
+	const toggleCollapse = node => {
+		// Use the node's id for identification
+		const nodeId = node.id || node
+
+		// Collect all downstream nodes
+		const downstreamNodes = collectDownstreamNodes(nodeId)
+
+		if (collapsedNodes.value.has(nodeId)) {
+			// Expand: Remove the current node and all its downstream nodes from the collapsed set
 			downstreamNodes.forEach(id => collapsedNodes.value.delete(id))
 		} else {
-			// Collapse: Add all downstream nodes to the collapsed set
+			// Collapse: Add the current node and all its downstream nodes to the collapsed set
 			downstreamNodes.forEach(id => collapsedNodes.value.add(id))
 		}
 	}
