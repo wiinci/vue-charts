@@ -40,51 +40,66 @@
 	})
 	const getYPosition = computed(() => d => (d.y1 + d.y0) / 2)
 
-	// Update the filteredData computation to properly identify root collapsed nodes
+	// Update the filteredData computation to handle nodes with multiple incoming paths
 	const filteredData = computed(() => {
 		// If no nodes are collapsed, show all labels
 		if (props.collapsedNodes.size === 0) {
 			return props.data
 		}
 
-		// Create a set to track root collapsed nodes
-		const rootCollapsedNodes = new Set()
+		// Create a set to track nodes that should be hidden
+		const nodesToHide = new Set()
 
-		// Process each node to identify root collapsed nodes
+		// For each node, check if ALL of its source nodes are collapsed
 		props.data.forEach(node => {
-			if (props.collapsedNodes.has(node.id)) {
-				// A root collapsed node is one that doesn't have any upstream collapsed nodes
-				// but has downstream collapsed nodes
+			// Skip directly collapsed nodes (we'll handle them separately)
+			if (!props.collapsedNodes.has(node.id)) {
+				return
+			}
 
-				// Check if any upstream nodes (sources) are collapsed
-				const hasCollapsedUpstream =
-					node.targetLinks &&
-					node.targetLinks.some(link =>
-						props.collapsedNodes.has(link.source.id)
+			// If the node has no incoming links, it's a source node
+			if (!node.targetLinks || node.targetLinks.length === 0) {
+				// For source nodes in the collapsed set, they should only be visible
+				// if they are "root collapsed" nodes (ones directly clicked)
+				const isRootCollapsed =
+					!node.targetLinks ||
+					node.targetLinks.every(
+						link => !props.collapsedNodes.has(link.source.id)
 					)
 
-				// If this node has no collapsed upstream nodes, it's a root collapsed node
-				if (!hasCollapsedUpstream) {
-					rootCollapsedNodes.add(node.id)
+				if (!isRootCollapsed) {
+					nodesToHide.add(node.id)
 				}
+				return
+			}
+
+			// For nodes with incoming links, check if ALL source nodes are collapsed
+			const allSourcesCollapsed = node.targetLinks.every(link =>
+				props.collapsedNodes.has(link.source.id)
+			)
+
+			// If all sources are collapsed, this node should be hidden
+			if (allSourcesCollapsed) {
+				nodesToHide.add(node.id)
 			}
 		})
 
-		// Filter the nodes to keep:
-		// 1. All non-collapsed nodes
-		// 2. Root collapsed nodes
+		// Filter the data to include:
+		// 1. Nodes not in the collapsed set
+		// 2. Nodes in collapsed set but not in nodesToHide (these are root collapsed nodes)
 		return props.data.filter(node => {
-			// Keep all non-collapsed nodes
+			// If the node is not in the collapsed set, show it
 			if (!props.collapsedNodes.has(node.id)) {
 				return true
 			}
 
-			// Keep root collapsed nodes
-			if (rootCollapsedNodes.has(node.id)) {
-				return true
+			// If the node is determined to be hidden, don't show it
+			if (nodesToHide.has(node.id)) {
+				return false
 			}
 
-			return false
+			// Otherwise show the node (it's a root collapsed node)
+			return true
 		})
 	})
 
