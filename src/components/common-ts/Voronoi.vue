@@ -20,6 +20,7 @@
 
 	const emit = defineEmits<{
 		'move-to': [{d: Datum}]
+		'node-click': [{id: string}]
 	}>()
 
 	const voronoiRef = ref<SVGGElement | null>(null)
@@ -41,6 +42,15 @@
 		}
 	}
 
+	// Add a click event handler to emit the clicked node's identifier
+	const handleClick = (event: PointerEvent, data: Datum[]) => {
+		const [x, y] = pointer(event)
+		const i = voronoi.value.find(x, y)
+		if (i !== undefined && i >= 0 && i < data.length) {
+			emit('node-click', {id: data[i].id})
+		}
+	}
+
 	onMounted(() => {
 		renderVoronoi()
 	})
@@ -52,7 +62,7 @@
 
 		select(voronoiRef.value)
 			.selectAll('rect')
-			.data([props.data])
+			.data([props.data]) // Ensure `props.data` is passed correctly
 			.join('rect')
 			.attr('height', props.height)
 			.attr('width', props.width)
@@ -64,6 +74,7 @@
 			.on('pointerleave', () =>
 				emit('move-to', {d: props.data[props.data.length - 1]})
 			)
+			.on('click', (e: PointerEvent, d: Datum[]) => handleClick(e, d))
 	}
 </script>
 

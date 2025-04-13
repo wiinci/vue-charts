@@ -1,7 +1,7 @@
 <script setup>
 	import {constants} from '@/assets/constants'
 	import {select} from 'd3-selection'
-	import {proxyRefs, ref, watchEffect} from 'vue'
+	import {proxyRefs, ref, watchEffect, computed} from 'vue'
 
 	const props = defineProps({
 		data: {
@@ -20,19 +20,42 @@
 			required: true,
 			type: Function,
 		},
+		collapsedNodes: {
+			type: Set,
+			required: true,
+		},
 	})
 
 	const nodeRef = ref(null)
+
+	// Update the filteredData to ensure source and target properties are properly accessed
+	const filteredData = computed(() => {
+		const visibleNodes = new Set()
+
+		// Add all nodes that are part of visible links
+		props.data.forEach(link => {
+			if (
+				link.source &&
+				link.target &&
+				!props.collapsedNodes.has(link.source.id)
+			) {
+				visibleNodes.add(link.source.id)
+				visibleNodes.add(link.target.id)
+			}
+		})
+
+		return props.data.filter(node => visibleNodes.has(node.id))
+	})
 
 	// Reactively update when dependencies change
 	watchEffect(() => {
 		if (!nodeRef.value) return
 
-		const {data, nodeId, xAccessor, yAccessor} = proxyRefs(props)
+		const {nodeId, xAccessor, yAccessor} = proxyRefs(props)
 
 		select(nodeRef.value)
 			.selectAll('rect')
-			.data(data, d => d[nodeId])
+			.data(filteredData.value, d => d[nodeId])
 			.join(
 				enter =>
 					enter

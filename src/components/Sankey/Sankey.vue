@@ -77,6 +77,67 @@
 		labelId.value = typeof d === 'object' ? d.id : ''
 		labelDatum.value = typeof d === 'object' ? d : {}
 	}
+
+	// Add a reactive state to track collapsed nodes
+	const collapsedNodes = ref(new Set())
+
+	// Function to recursively collect all downstream nodes and links from a given node
+	const collectDownstreamNodes = (nodeId, visited = new Set()) => {
+		if (visited.has(nodeId)) return visited
+		visited.add(nodeId)
+
+		links
+			.filter(link => link.source.id === nodeId) // Traverse only downstream links
+			.forEach(link => {
+				visited.add(link.target.id) // Include the immediate target node
+				collectDownstreamNodes(link.target.id, visited)
+			})
+
+		return visited
+	}
+
+	// Function to toggle collapse/expand on node click
+	const toggleCollapse = node => {
+		const downstreamNodes = collectDownstreamNodes(node.id)
+
+		if (collapsedNodes.value.has(node.id)) {
+			// Expand: Remove all downstream nodes from the collapsed set
+			downstreamNodes.forEach(id => collapsedNodes.value.delete(id))
+		} else {
+			// Collapse: Add all downstream nodes to the collapsed set
+			downstreamNodes.forEach(id => collapsedNodes.value.add(id))
+		}
+	}
+
+	// Update the nodes and links based on collapsed state
+	const filteredLinks = computed(() => {
+		return links.filter(link => {
+			// Hide links only if the source node is collapsed
+			return !collapsedNodes.value.has(link.source.id)
+		})
+	})
+
+	const filteredNodes = computed(() => {
+		const visibleNodes = new Set()
+
+		// Add all nodes that are part of visible links
+		filteredLinks.value.forEach(link => {
+			visibleNodes.add(link.source.id)
+			visibleNodes.add(link.target.id)
+		})
+
+		// Add collapsed nodes to keep them visible
+		collapsedNodes.value.forEach(nodeId => {
+			visibleNodes.add(nodeId)
+		})
+
+		return nodes.filter(node => visibleNodes.has(node.id))
+	})
+
+	// Listen for the node-click event from Voronoi
+	const handleNodeClick = ({id}) => {
+		toggleCollapse({id})
+	}
 </script>
 
 <template>
@@ -86,27 +147,34 @@
 		:marginTop="0"
 		:width="width"
 	>
-		<Links :data="links" />
+		<Links
+			:data="filteredLinks"
+			:collapsedNodes="collapsedNodes"
+		/>
 		<Nodes
-			:data="nodes"
+			:data="filteredNodes"
 			:nodeId="nodeId"
 			:xAccessor="xAccessor"
 			:yAccessor="yAccessor"
+			:collapsedNodes="collapsedNodes"
+			@click="toggleCollapse"
 		/>
 		<Labels
-			:data="nodes"
+			:data="filteredNodes"
+			:collapsedNodes="collapsedNodes"
 			:node-id="nodeId"
 			:node-width="nodeWidth"
 			:width="chartWidth"
 		/>
 		<Voronoi
 			:classKey="'sankey'"
-			:data="nodes"
+			:data="filteredNodes"
 			:height="height"
 			:width="width"
 			:xAccessor="xAccessor"
 			:yAccessor="yAccessor"
 			@move-to="highlightLinks"
+			@node-click="handleNodeClick"
 		/>
 	</Chart>
 </template>

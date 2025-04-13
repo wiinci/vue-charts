@@ -20,6 +20,10 @@
 			required: true,
 			type: Number,
 		},
+		collapsedNodes: {
+			type: Set,
+			required: true,
+		},
 	})
 
 	const nodeRef = ref(null)
@@ -36,12 +40,17 @@
 	})
 	const getYPosition = computed(() => d => (d.y1 + d.y0) / 2)
 
+	// Filter data to exclude nodes that are collapsed
+	const filteredData = computed(() => {
+		return props.data.filter(node => !props.collapsedNodes.has(node.id))
+	})
+
 	watchEffect(() => {
 		if (!nodeRef.value) return
 
 		select(nodeRef.value)
 			.selectAll('text')
-			.data(props.data, d => d[props.nodeId])
+			.data(filteredData.value, d => d[props.nodeId])
 			.join(
 				enter =>
 					enter

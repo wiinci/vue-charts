@@ -12,6 +12,10 @@
 			type: Array,
 			required: true,
 		},
+		collapsedNodes: {
+			type: Set,
+			required: true,
+		},
 	})
 
 	const nodeRef = ref(null)
@@ -49,10 +53,18 @@
 	const labelHoverId = inject('labelId')
 	const isHovered = computed(() => labelHoverId.value !== '')
 
+	// Update the filteredData to exclude downstream links
+	const filteredData = computed(() => {
+		return props.data.filter(link => {
+			// Hide links if the source node is collapsed
+			return !props.collapsedNodes.has(link.source.id)
+		})
+	})
+
 	watchEffect(() => {
 		if (!nodeRef.value) return
 
-		const data = props.data
+		const data = filteredData.value
 
 		// Reset collections before recalculating
 		source.value = []
