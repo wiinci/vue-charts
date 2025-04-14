@@ -211,35 +211,48 @@
 			// COLLAPSE: Add the node to the collapsed set
 			collapsedNodes.value.add(nodeId)
 
+			// Find the node object to check if it's a root source
+			const currentNode = nodes.find(n => n.id === nodeId)
+			const isRootSource =
+				!currentNode?.targetLinks || currentNode.targetLinks.length === 0
+
 			// Get all downstream nodes
-			const downstreamNodes = collectDownstreamNodes(nodeId)
+			const downstreamNodes = new Set(collectDownstreamNodes(nodeId))
+			downstreamNodes.delete(nodeId) // Remove the original node from downstream set
 
-			// Find the root sources of the node being collapsed
-			const nodeRootSources = findNodeRootSources(nodeId)
-
-			// For each downstream node, determine if it should be collapsed
+			// Process each downstream node
 			downstreamNodes.forEach(id => {
-				if (id !== nodeId) {
-					// Skip the original node we just processed
-					// Find all root sources that can reach this downstream node
-					const downstreamNodeRootSources = findNodeRootSources(id)
+				const node = nodes.find(n => n.id === id)
+				if (!node) return
 
-					// Check if all root sources of this node are also root sources of the collapsed node
-					// If so, this node is exclusively dependent on the collapsed subtree and should be collapsed
-					let shouldCollapse = true
+				if (isRootSource) {
+					// For root source nodes, we need to check if the downstream node
+					// is influenced by any other non-collapsed root sources
+					const allRootSources = findNodeRootSources(id)
 
-					downstreamNodeRootSources.forEach(rootSource => {
-						// If this root source is not in the collapsed node's root sources,
-						// then this downstream node has an independent path and should remain visible
-						if (
-							!nodeRootSources.has(rootSource) &&
-							!collapsedNodes.value.has(rootSource)
-						) {
-							shouldCollapse = false
-						}
+					// Check if all root sources for this node are now collapsed
+					const allRootSourcesCollapsed = Array.from(allRootSources).every(
+						rootSourceId =>
+							rootSourceId === nodeId || collapsedNodes.value.has(rootSourceId)
+					)
+
+					// Only collapse if all root sources are now collapsed
+					if (allRootSourcesCollapsed) {
+						collapsedNodes.value.add(id)
+					}
+				} else if (node.targetLinks) {
+					// For non-root nodes, only collapse if ALL sources are collapsed
+					const allSourcesCollapsed = node.targetLinks.every(link => {
+						const sourceId =
+							typeof link.source === 'object' ? link.source.id : link.source
+						// A source is considered "collapsed" if:
+						// 1. It's the node we're currently collapsing, or
+						// 2. It's already in the collapsed nodes set
+						return sourceId === nodeId || collapsedNodes.value.has(sourceId)
 					})
 
-					if (shouldCollapse) {
+					// Only collapse this node if ALL of its sources are collapsed
+					if (allSourcesCollapsed) {
 						collapsedNodes.value.add(id)
 					}
 				}
