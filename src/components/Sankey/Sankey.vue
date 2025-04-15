@@ -147,66 +147,35 @@
 
 	// Function to toggle collapse/expand on node click with improved handling for multiple sources
 	const toggleCollapse = node => {
-		// Use the node's id for identification
 		const nodeId = node.id || node
 
 		if (collapsedNodes.value.has(nodeId)) {
-			// EXPAND: Remove this node from the collapsed set
 			collapsedNodes.value.delete(nodeId)
 
-			// Process expansion recursively to handle all downstream nodes
-			const processExpansion = nodesToCheck => {
-				// Track newly expanded nodes to check their downstream nodes in the next round
-				const newlyExpandedNodes = []
-
-				// Check each node to see if it should be expanded
-				nodesToCheck.forEach(nId => {
-					const node = nodes.find(n => n.id === nId)
-					if (!node || !node.targetLinks || !collapsedNodes.value.has(nId)) {
-						return // Skip if not found, no target links, or already expanded
-					}
-
-					// Check if all source nodes for this node are now expanded
-					const allSourcesExpanded = node.targetLinks.every(link => {
-						const sourceId =
-							typeof link.source === 'object' ? link.source.id : link.source
-						return !collapsedNodes.value.has(sourceId)
-					})
-
-					// If all sources are expanded, we can remove this node from collapsed set
-					if (allSourcesExpanded) {
-						collapsedNodes.value.delete(nId)
-						newlyExpandedNodes.push(nId)
-
-						// Also collect its direct downstream nodes for the next round
-						node.sourceLinks?.forEach(link => {
-							const targetId =
-								typeof link.target === 'object' ? link.target.id : link.target
-							if (collapsedNodes.value.has(targetId)) {
-								newlyExpandedNodes.push(targetId)
-							}
-						})
-					}
-				})
-
-				// If we expanded any nodes, recursively check their downstream nodes
-				if (newlyExpandedNodes.length > 0) {
-					processExpansion(newlyExpandedNodes)
-				}
-			}
-
-			// Start the recursive expansion with direct downstream nodes
-			const directDownstream = []
-			const expandedNode = nodes.find(n => n.id === nodeId)
-			if (expandedNode && expandedNode.sourceLinks) {
-				expandedNode.sourceLinks.forEach(link => {
+			const expandDownstream = nId => {
+				const n = nodes.find(nn => nn.id === nId)
+				if (!n || !n.sourceLinks) return
+				n.sourceLinks.forEach(link => {
 					const targetId =
 						typeof link.target === 'object' ? link.target.id : link.target
-					directDownstream.push(targetId)
+					const targetNode = nodes.find(nn => nn.id === targetId)
+					if (!targetNode) return
+					const allSourcesCollapsed =
+						targetNode.targetLinks &&
+						targetNode.targetLinks.every(l =>
+							collapsedNodes.value.has(
+								typeof l.source === 'object' ? l.source.id : l.source
+							)
+						)
+					if (!allSourcesCollapsed && collapsedNodes.value.has(targetId)) {
+						collapsedNodes.value.delete(targetId)
+						expandDownstream(targetId)
+					} else if (!collapsedNodes.value.has(targetId)) {
+						expandDownstream(targetId)
+					}
 				})
 			}
-
-			processExpansion(directDownstream)
+			expandDownstream(nodeId)
 		} else {
 			// COLLAPSE: Add the node to the collapsed set
 			collapsedNodes.value.add(nodeId)
