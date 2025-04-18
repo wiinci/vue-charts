@@ -2,7 +2,7 @@
 	import {constants} from '@/assets/constants'
 	import {select} from 'd3-selection'
 	import {transition} from 'd3-transition'
-	import {computed, proxyRefs, ref, watchEffect} from 'vue'
+	import {computed, proxyRefs, ref, watchEffect, defineEmits} from 'vue'
 
 	const props = defineProps({
 		data: {
@@ -26,6 +26,8 @@
 			required: true,
 		},
 	})
+
+	const emit = defineEmits(['click'])
 
 	const nodeRef = ref(null)
 
@@ -108,6 +110,7 @@
 				enter =>
 					enter
 						.append('rect')
+						.on('click', (e, d) => emit('click', d[nodeId]))
 						.attr('fill', 'none')
 						.attr('height', d => d.y1 - d.y0)
 						.attr('width', d => d.x1 - d.x0)
