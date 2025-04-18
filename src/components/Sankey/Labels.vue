@@ -1,55 +1,45 @@
-<script setup>
+<script setup lang="ts">
 	import {constants} from '@/assets/constants'
+	import {SankeyNode} from '@/composables/useNodesAndLinks'
 	import {select} from 'd3-selection'
 	import {transition} from 'd3-transition'
 	import {computed, ref, watchEffect} from 'vue'
 
-	const props = defineProps({
-		data: {
-			type: Array,
-			required: true,
-		},
-		nodeId: {
-			required: true,
-			type: String,
-		},
-		nodeWidth: {
-			required: true,
-			type: Number,
-		},
-		width: {
-			required: true,
-			type: Number,
-		},
-		collapsedNodes: {
-			type: Set,
-			required: true,
-		},
-	})
+	interface LabelProps {
+		data: SankeyNode[]
+		nodeId: string
+		nodeWidth: number
+		width: number
+		collapsedNodes: Set<string>
+	}
 
-	const nodeRef = ref(null)
+	const props = defineProps<LabelProps>()
 
-	// Memoize calculations
+	const nodeRef = ref<SVGGElement | null>(null)
+
+	// Memoize calculations for better performance
 	const getTextAnchor = computed(
-		() => d => d.x0 < props.width / 2 ? 'start' : 'end'
+		() => (d: SankeyNode) => d.x0 < props.width / 2 ? 'start' : 'end'
 	)
-	const getXPosition = computed(() => d => {
+
+	const getXPosition = computed(() => (d: SankeyNode) => {
 		if (props.nodeWidth < 1) return d.x0
 		return d.x0 < props.width / 2
 			? d.x0 + props.nodeWidth
 			: d.x1 - props.nodeWidth
 	})
-	const getYPosition = computed(() => d => (d.y1 + d.y0) / 2)
+
+	const getYPosition = computed(() => (d: SankeyNode) => (d.y1 + d.y0) / 2)
 
 	// Update the filteredData computation to handle nodes with multiple incoming paths
-	const filteredData = computed(() => {
+	const filteredData = computed((): SankeyNode[] => {
 		// If no nodes are collapsed, show all labels
 		if (props.collapsedNodes.size === 0) {
 			return props.data
 		}
 
 		// Create a set to track nodes that should be hidden
-		const nodesToHide = new Set()
+		const nodesToHide = new Set<string>()
 
 		// For each node, check if ALL of its source nodes are collapsed
 		props.data.forEach(node => {
@@ -64,9 +54,13 @@
 				// if they are "root collapsed" nodes (ones directly clicked)
 				const isRootCollapsed =
 					!node.targetLinks ||
-					node.targetLinks.every(
-						link => !props.collapsedNodes.has(link.source.id)
-					)
+					node.targetLinks.every(link => {
+						const sourceId =
+							typeof link.source === 'object'
+								? link.source.id
+								: (link.source as string)
+						return !props.collapsedNodes.has(sourceId)
+					})
 
 				if (!isRootCollapsed) {
 					nodesToHide.add(node.id)
@@ -75,9 +69,13 @@
 			}
 
 			// For nodes with incoming links, check if ALL source nodes are collapsed
-			const allSourcesCollapsed = node.targetLinks.every(link =>
-				props.collapsedNodes.has(link.source.id)
-			)
+			const allSourcesCollapsed = node.targetLinks.every(link => {
+				const sourceId =
+					typeof link.source === 'object'
+						? link.source.id
+						: (link.source as string)
+				return props.collapsedNodes.has(sourceId)
+			})
 
 			// If all sources are collapsed, this node should be hidden
 			if (allSourcesCollapsed) {
@@ -112,12 +110,12 @@
 
 		select(nodeRef.value)
 			.selectAll('text')
-			.data(filteredData.value, d => d[props.nodeId])
+			.data(filteredData.value, (d: any) => d[props.nodeId])
 			.join(
 				enter =>
 					enter
 						.append('text')
-						.text(d => d[props.nodeId])
+						.text((d: SankeyNode) => d[props.nodeId])
 						.attr('dominant-baseline', 'middle')
 						.attr('paint-order', 'stroke')
 						.attr('stroke-linecap', 'round')
@@ -128,14 +126,22 @@
 						.attr('x', getXPosition.value)
 						.attr('y', getYPosition.value)
 						.attr('opacity', 1e-9)
-						.call(enter =>
+						.call((enter: any) =>
 							enter
 								.transition(t)
-								.delay(d => constants.duration.short * (d.depth + 1))
+								.delay(
+									(d: SankeyNode) =>
+										constants.duration.short * ((d.depth || 0) + 1)
+								)
 								.attr('opacity', 1)
 						),
-				update => update.text(d => d[props.nodeId]),
-				exit => exit.remove()
+				update =>
+					update
+						.attr('text-anchor', getTextAnchor.value)
+						.attr('x', getXPosition.value)
+						.attr('y', getYPosition.value)
+						.text((d: SankeyNode) => d[props.nodeId]),
+				exit => exit.transition(t).attr('opacity', 0).remove()
 			)
 	})
 </script>

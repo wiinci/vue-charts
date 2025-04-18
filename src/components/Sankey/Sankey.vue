@@ -1,36 +1,62 @@
-<script setup>
+<script setup lang="ts">
 	import Chart from '@/components/common-ts/Chart.vue'
 	import Voronoi from '@/components/common-ts/Voronoi.vue'
-	import useCollapsed from '@/hooks/useCollapsed'
-	import useNodesAndLinks from '@/hooks/useNodesAndLinks'
-	import {computed, provide, ref} from 'vue'
+	import {useCollapsed} from '@/composables/useCollapsed'
+	import {
+		useNodesAndLinks,
+		SankeyLink,
+		SankeyNode,
+		SankeyProps,
+	} from '@/composables/useNodesAndLinks'
+	import {computed, provide, ref, watchEffect} from 'vue'
 	import Labels from './Labels.vue'
 	import Links from './Links.vue'
 	import Nodes from './Nodes.vue'
 
-	const props = defineProps({
-		data: {required: true, type: Array},
-		height: {default: 480, type: Number},
-		marginLeft: {default: 20, type: Number},
-		marginRight: {default: 20, type: Number},
-		marginBottom: {default: 20, type: Number},
-		marginTop: {default: 20, type: Number},
-		nodeAlign: {default: 'left', type: String},
-		nodeId: {default: 'id', type: String},
-		nodePadding: {default: 10, type: Number},
-		nodeWidth: {default: 10, type: Number},
-		sort: {default: false, type: Boolean},
-		width: {default: 960, type: Number},
-	})
+	const props = withDefaults(
+		defineProps<{
+			data: SankeyLink[]
+			height?: number
+			marginLeft?: number
+			marginRight?: number
+			marginBottom?: number
+			marginTop?: number
+			nodeAlign?: 'justify' | 'left' | 'right' | 'center'
+			nodeId?: string
+			nodePadding?: number
+			nodeWidth?: number
+			sort?: boolean
+			width?: number
+		}>(),
+		{
+			height: 480,
+			marginLeft: 20,
+			marginRight: 20,
+			marginBottom: 20,
+			marginTop: 20,
+			nodeAlign: 'left',
+			nodeId: 'id',
+			nodePadding: 10,
+			nodeWidth: 10,
+			sort: false,
+			width: 960,
+		}
+	)
 
-	const {chartWidth, links, nodes} = useNodesAndLinks(props)
+	// Use the refactored composables
+	const {chartWidth, nodes, links} = useNodesAndLinks(props as SankeyProps)
 
-	const labelDatum = ref({})
-	const labelId = ref('')
-	const xAccessor = computed(() => d => d.x0)
-	const yAccessor = computed(() => d => d.y0)
+	// Reactive state for highlight functionality
+	const labelDatum = ref<SankeyNode | {}>({})
+	const labelId = ref<string>('')
+
+	// Expose data to child components via provide/inject
 	provide('labelDatum', labelDatum)
 	provide('labelId', labelId)
+
+	// Accessors for node positions
+	const xAccessor = computed(() => (d: SankeyNode) => d.x0)
+	const yAccessor = computed(() => (d: SankeyNode) => d.y0)
 
 	// Use composable for collapse logic and filtered data
 	const {collapsedNodes, filteredLinks, filteredNodes, toggleCollapse} =
@@ -39,12 +65,26 @@
 			computed(() => links)
 		)
 
-	const handleNodeClick = ({id}) => toggleCollapse(id)
+	/**
+	 * Handle node click event - delegates to the toggleCollapse function
+	 */
+	const handleNodeClick = ({id}: {id: string}) => toggleCollapse(id)
 
-	function highlightLinks({d}) {
-		labelId.value = typeof d === 'object' ? d.id : ''
-		labelDatum.value = typeof d === 'object' ? d : {}
+	/**
+	 * Update highlight state based on hovered node
+	 */
+	function highlightLinks({d}: {d: SankeyNode | any}) {
+		labelId.value = d && typeof d === 'object' ? d.id : ''
+		labelDatum.value = d && typeof d === 'object' ? d : {}
 	}
+
+	// Performance optimization - reset highlight when component unmounts
+	watchEffect(onCleanup => {
+		onCleanup(() => {
+			labelId.value = ''
+			labelDatum.value = {}
+		})
+	})
 </script>
 
 <template>
@@ -75,11 +115,11 @@
 		/>
 		<Voronoi
 			:classKey="'sankey'"
-			:data="filteredNodes"
+			:data="filteredNodes as any"
 			:height="height"
 			:width="width"
-			:xAccessor="xAccessor"
-			:yAccessor="yAccessor"
+			:xAccessor="xAccessor as any"
+			:yAccessor="yAccessor as any"
 			@move-to="highlightLinks"
 			@node-click="handleNodeClick"
 		/>

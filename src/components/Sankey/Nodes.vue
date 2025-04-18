@@ -1,35 +1,25 @@
-<script setup>
+<script setup lang="ts">
 	import {constants} from '@/assets/constants'
+	import {SankeyNode} from '@/composables/useNodesAndLinks'
 	import {select} from 'd3-selection'
 	import {transition} from 'd3-transition'
-	import {computed, proxyRefs, ref, watchEffect, defineEmits} from 'vue'
+	import {computed, ref, watchEffect} from 'vue'
 
-	const props = defineProps({
-		data: {
-			type: Array,
-			required: true,
-		},
-		nodeId: {
-			required: true,
-			type: String,
-		},
-		xAccessor: {
-			required: true,
-			type: Function,
-		},
-		yAccessor: {
-			required: true,
-			type: Function,
-		},
-		collapsedNodes: {
-			type: Set,
-			required: true,
-		},
-	})
+	interface NodeProps {
+		data: SankeyNode[]
+		nodeId: string
+		xAccessor: (d: SankeyNode) => number
+		yAccessor: (d: SankeyNode) => number
+		collapsedNodes: Set<string>
+	}
 
-	const emit = defineEmits(['click'])
+	const props = defineProps<NodeProps>()
 
-	const nodeRef = ref(null)
+	const emit = defineEmits<{
+		(e: 'click', id: string): void
+	}>()
+
+	const nodeRef = ref<SVGGElement | null>(null)
 
 	// Update the filteredData to handle nodes with multiple incoming paths
 	const filteredData = computed(() => {
@@ -39,7 +29,7 @@
 		}
 
 		// Create a set to track nodes that should be hidden
-		const nodesToHide = new Set()
+		const nodesToHide = new Set<string>()
 
 		// For each node, check if ALL of its source nodes are collapsed
 		props.data.forEach(node => {
@@ -54,9 +44,13 @@
 				// if they are "root collapsed" nodes (ones directly clicked)
 				const isRootCollapsed =
 					!node.targetLinks ||
-					node.targetLinks.every(
-						link => !props.collapsedNodes.has(link.source.id)
-					)
+					node.targetLinks.every(link => {
+						const sourceId =
+							typeof link.source === 'object'
+								? link.source.id
+								: (link.source as string)
+						return !props.collapsedNodes.has(sourceId)
+					})
 
 				if (!isRootCollapsed) {
 					nodesToHide.add(node.id)
@@ -65,9 +59,13 @@
 			}
 
 			// For nodes with incoming links, check if ALL source nodes are collapsed
-			const allSourcesCollapsed = node.targetLinks.every(link =>
-				props.collapsedNodes.has(link.source.id)
-			)
+			const allSourcesCollapsed = node.targetLinks.every(link => {
+				const sourceId =
+					typeof link.source === 'object'
+						? link.source.id
+						: (link.source as string)
+				return props.collapsedNodes.has(sourceId)
+			})
 
 			// If all sources are collapsed, this node should be hidden
 			if (allSourcesCollapsed) {
@@ -75,9 +73,7 @@
 			}
 		})
 
-		// Filter the data to include:
-		// 1. Nodes not in the collapsed set
-		// 2. Nodes in collapsed set but not in nodesToHide (these are root collapsed nodes)
+		// Filter the data to only show visible nodes
 		return props.data.filter(node => {
 			// If the node is not in the collapsed set, show it
 			if (!props.collapsedNodes.has(node.id)) {
@@ -101,36 +97,34 @@
 		// Create a fresh transition for each effect run
 		const t = transition().duration(constants.duration.short)
 
-		const {nodeId, xAccessor, yAccessor} = proxyRefs(props)
-
 		select(nodeRef.value)
 			.selectAll('rect')
-			.data(filteredData.value, d => d[nodeId])
+			.data(filteredData.value, (d: any) => d[props.nodeId])
 			.join(
 				enter =>
 					enter
 						.append('rect')
-						.on('click', (e, d) => emit('click', d[nodeId]))
+						.on('click', (e, d: any) => emit('click', d[props.nodeId]))
 						.attr('fill', 'none')
-						.attr('height', d => d.y1 - d.y0)
-						.attr('width', d => d.x1 - d.x0)
-						.attr('x', xAccessor)
-						.attr('y', yAccessor)
-						.attr('opacity', 1e-9)
-						.call(enter =>
+						.attr('height', (d: any) => d.y1 - d.y0)
+						.attr('width', (d: any) => d.x1 - d.x0)
+						.attr('x', (d: any) => props.xAccessor(d))
+						.attr('y', (d: any) => props.yAccessor(d))
+						.attr('opacity', 0)
+						.call((enter: any) =>
 							enter
 								.transition(t)
-								.delay(d => constants.duration.medium * (d.depth + 1))
+								.delay((d: any) => constants.duration.medium * (d.depth + 1))
 								.attr('opacity', 1)
 						),
 				update =>
 					update
 						.transition(t)
-						.attr('height', d => d.y1 - d.y0)
-						.attr('width', d => d.x1 - d.x0)
-						.attr('x', xAccessor)
-						.attr('y', yAccessor),
-				exit => exit.transition(t).attr('opacity', 1e-9).remove()
+						.attr('height', (d: any) => d.y1 - d.y0)
+						.attr('width', (d: any) => d.x1 - d.x0)
+						.attr('x', (d: any) => props.xAccessor(d))
+						.attr('y', (d: any) => props.yAccessor(d)),
+				exit => exit.transition(t).attr('opacity', 0).remove()
 			)
 	})
 </script>
