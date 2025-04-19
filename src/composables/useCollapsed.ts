@@ -1,5 +1,5 @@
-import {computed, ref, Ref, ComputedRef} from 'vue'
-import {SankeyNode, SankeyLink} from './useNodesAndLinks'
+import {computed, ComputedRef, ref, Ref} from 'vue'
+import {SankeyLink, SankeyNode} from './useNodesAndLinks'
 
 export interface CollapsedResult {
 	collapsedNodes: Ref<Set<string>>

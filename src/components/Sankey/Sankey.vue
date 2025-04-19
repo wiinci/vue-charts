@@ -1,12 +1,12 @@
 <script setup lang="ts">
 	import Chart from '@/components/common-ts/Chart.vue'
 	import Voronoi from '@/components/common-ts/Voronoi.vue'
-	import {useHierarchyCollapse} from '@/composables/useHierarchyCollapse'
+	import {useCollapsed} from '@/composables/useCollapsed'
 	import {
-		useNodesAndLinks,
 		SankeyLink,
 		SankeyNode,
 		SankeyProps,
+		useNodesAndLinks,
 	} from '@/composables/useNodesAndLinks'
 	import {computed, provide, ref, watchEffect} from 'vue'
 	import Labels from './Labels.vue'
@@ -58,16 +58,17 @@
 	const xAccessor = computed(() => (d: SankeyNode) => d.x0)
 	const yAccessor = computed(() => (d: SankeyNode) => d.y0)
 
-	// Use hierarchy-based collapse composable
-	const {collapsed, visibleNodes, visibleLinks, toggle} = useHierarchyCollapse(
-		nodes,
-		links
-	)
+	// Use collapsed composable
+	const {collapsedNodes, filteredNodes, filteredLinks, toggleCollapse} =
+		useCollapsed(
+			computed(() => nodes),
+			computed(() => links)
+		)
 
 	/**
-	 * Handle node click event - delegates to the toggle function
+	 * Handle node click event - delegates to the toggleCollapse function
 	 */
-	const handleNodeClick = ({id}: {id: string}) => toggle(id)
+	const handleNodeClick = ({id}: {id: string}) => toggleCollapse(id)
 
 	/**
 	 * Update highlight state based on hovered node
@@ -94,27 +95,27 @@
 		:width="width"
 	>
 		<Links
-			:data="visibleLinks"
-			:collapsedNodes="collapsed"
+			:data="filteredLinks"
+			:collapsedNodes="collapsedNodes"
 		/>
 		<Nodes
-			:data="visibleNodes"
+			:data="filteredNodes"
 			:nodeId="nodeId"
 			:xAccessor="xAccessor"
 			:yAccessor="yAccessor"
-			:collapsedNodes="collapsed"
-			@click="toggle"
+			:collapsedNodes="collapsedNodes"
+			@click="toggleCollapse"
 		/>
 		<Labels
-			:data="visibleNodes"
-			:collapsedNodes="collapsed"
+			:data="filteredNodes"
+			:collapsedNodes="collapsedNodes"
 			:node-id="nodeId"
 			:node-width="nodeWidth"
 			:width="chartWidth"
 		/>
 		<Voronoi
 			:classKey="'sankey'"
-			:data="visibleNodes as any"
+			:data="filteredNodes as any"
 			:height="height"
 			:width="width"
 			:xAccessor="xAccessor as any"
