@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import Chart from '@/components/common-ts/Chart.vue'
 	import Voronoi from '@/components/common-ts/Voronoi.vue'
-	import {useCollapsed} from '@/composables/useCollapsed'
+	import {useHierarchyCollapse} from '@/composables/useHierarchyCollapse'
 	import {
 		useNodesAndLinks,
 		SankeyLink,
@@ -58,17 +58,16 @@
 	const xAccessor = computed(() => (d: SankeyNode) => d.x0)
 	const yAccessor = computed(() => (d: SankeyNode) => d.y0)
 
-	// Use composable for collapse logic and filtered data
-	const {collapsedNodes, filteredLinks, filteredNodes, toggleCollapse} =
-		useCollapsed(
-			computed(() => nodes),
-			computed(() => links)
-		)
+	// Use hierarchy-based collapse composable
+	const {collapsed, visibleNodes, visibleLinks, toggle} = useHierarchyCollapse(
+		nodes,
+		links
+	)
 
 	/**
-	 * Handle node click event - delegates to the toggleCollapse function
+	 * Handle node click event - delegates to the toggle function
 	 */
-	const handleNodeClick = ({id}: {id: string}) => toggleCollapse(id)
+	const handleNodeClick = ({id}: {id: string}) => toggle(id)
 
 	/**
 	 * Update highlight state based on hovered node
@@ -95,27 +94,27 @@
 		:width="width"
 	>
 		<Links
-			:data="filteredLinks"
-			:collapsedNodes="collapsedNodes"
+			:data="visibleLinks"
+			:collapsedNodes="collapsed"
 		/>
 		<Nodes
-			:data="filteredNodes"
+			:data="visibleNodes"
 			:nodeId="nodeId"
 			:xAccessor="xAccessor"
 			:yAccessor="yAccessor"
-			:collapsedNodes="collapsedNodes"
-			@click="toggleCollapse"
+			:collapsedNodes="collapsed"
+			@click="toggle"
 		/>
 		<Labels
-			:data="filteredNodes"
-			:collapsedNodes="collapsedNodes"
+			:data="visibleNodes"
+			:collapsedNodes="collapsed"
 			:node-id="nodeId"
 			:node-width="nodeWidth"
 			:width="chartWidth"
 		/>
 		<Voronoi
 			:classKey="'sankey'"
-			:data="filteredNodes as any"
+			:data="visibleNodes as any"
 			:height="height"
 			:width="width"
 			:xAccessor="xAccessor as any"

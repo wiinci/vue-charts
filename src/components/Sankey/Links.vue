@@ -43,17 +43,8 @@
 		computed(() => props.collapsedNodes)
 	)
 
-	// Filter links to exclude those from collapsed nodes
-	const filteredData = computed(() => {
-		return props.data.filter(link => {
-			// Get source ID accounting for both string and object references
-			const sourceId =
-				typeof link.source === 'object' ? link.source.id : link.source
-
-			// Hide links if the source node is collapsed
-			return !props.collapsedNodes.has(sourceId as string)
-		})
-	})
+	// Use data directly; filtering by collapse done in parent
+	const filteredData = computed(() => props.data)
 
 	watchEffect(() => {
 		if (!nodeRef.value) return

@@ -187,26 +187,35 @@ export function useCollapsed(
 	}
 
 	/**
-	 * Filter links to exclude those from collapsed nodes
+	 * Compute only those downstream nodes whose all source inputs are collapsed
+	 */
+	const collapsedDescendants = computed(() => {
+		const desc = new Set<string>()
+		// recursive traverse only when all sources to child are collapsed
+		function dfs(id: string) {
+			links.value.forEach(link => {
+				const sourceId =
+					typeof link.source === 'object' ? link.source.id : link.source
+				const targetId =
+					typeof link.target === 'object' ? link.target.id : link.target
+				if (sourceId === id) {
+					const node = getNodeById(targetId)
+					if (node && allSourcesCollapsed(node) && !desc.has(targetId)) {
+						desc.add(targetId)
+						dfs(targetId)
+					}
+				}
+			})
+		}
+		collapsedNodes.value.forEach(id => dfs(id))
+		return desc
+	})
+
+	/**
+	 * Filter links to hide outgoing connections from collapsed nodes and any link involving descendants
 	 */
 	const filteredLinks = computed((): SankeyLink[] =>
 		links.value.filter(link => {
-			const sourceId =
-				typeof link.source === 'object'
-					? link.source.id
-					: (link.source as string)
-			return !collapsedNodes.value.has(sourceId)
-		})
-	)
-
-	/**
-	 * Filter nodes to only show those that are visible
-	 */
-	const filteredNodes = computed((): SankeyNode[] => {
-		const visible = new Set<string>()
-
-		// Add all sources and targets of visible links
-		filteredLinks.value.forEach(link => {
 			const sourceId =
 				typeof link.source === 'object'
 					? link.source.id
@@ -215,17 +224,24 @@ export function useCollapsed(
 				typeof link.target === 'object'
 					? link.target.id
 					: (link.target as string)
-
-			visible.add(sourceId)
-			visible.add(targetId)
+			// Hide links outgoing from collapsed nodes
+			if (collapsedNodes.value.has(sourceId)) return false
+			// Hide links involving any collapsed descendants
+			if (
+				collapsedDescendants.value.has(sourceId) ||
+				collapsedDescendants.value.has(targetId)
+			)
+				return false
+			return true
 		})
+	)
 
-		// Add all collapsed nodes
-		collapsedNodes.value.forEach(id => visible.add(id))
-
-		// Return only visible nodes
-		return nodes.value.filter(n => visible.has(n.id))
-	})
+	/**
+	 * Filter nodes to exclude any descendants of collapsed nodes (but keep collapsed roots)
+	 */
+	const filteredNodes = computed((): SankeyNode[] =>
+		nodes.value.filter(n => !collapsedDescendants.value.has(n.id))
+	)
 
 	return {
 		collapsedNodes,
