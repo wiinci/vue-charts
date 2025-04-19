@@ -6,7 +6,7 @@
 	import {select} from 'd3-selection'
 	import {linkHorizontal} from 'd3-shape'
 	import {transition} from 'd3-transition'
-	import {computed, inject, ref, watchEffect, Ref} from 'vue'
+	import {computed, inject, ref, Ref, watchEffect} from 'vue'
 
 	const props = defineProps<{
 		data: SankeyLink[]
@@ -59,8 +59,6 @@
 		if (!nodeRef.value) return
 
 		const data = filteredData.value
-
-		// Only process when we have a valid hover datum
 		if (
 			labelHoverDatum.value &&
 			typeof labelHoverDatum.value.id !== 'undefined'
@@ -68,52 +66,55 @@
 			processHoveredNode(labelHoverDatum.value)
 		}
 
-		// Create the transition once
 		const t = transition().duration(constants.duration.short)
 
-		const linkSelection = select(nodeRef.value)
-			.selectAll('path')
-			.data(data, (d: any) => `${d.source.id}-${d.target.id}`)
-
-		// Handle entering links
-		linkSelection
-			.enter()
-			.append('path')
-			.attr('d', initialLinkAccessor.value)
-			.attr('stroke-width', (d: any) => Math.max(1, d.width))
-			.transition(t)
-			.delay((d: any) => constants.duration.short * ((d.source.depth || 0) + 1))
-			.attr('d', finalLinkAccessor.value)
-
-		// Handle exiting links
-		linkSelection
-			.exit()
-			.transition(t)
-			.attr('d', initialLinkAccessor.value)
-			.remove()
-
-		// Update all links
 		select(nodeRef.value)
 			.selectAll('path')
-			.attr('stroke', (d: any) =>
-				shouldHighlight(d, {
-					trueValue: constants.linkColorHighlight,
-					falseValue: constants.linkColor,
-				})
+			.data(data, (d: any) => `${d.source.id}-${d.target.id}`)
+			.join(
+				enter =>
+					enter
+						.append('path')
+						.attr('fill', 'none')
+						.attr('stroke', (d: any) =>
+							shouldHighlight(d, {
+								trueValue: constants.linkColorHighlight,
+								falseValue: constants.linkColor,
+							})
+						)
+						.attr('stroke-width', (d: any) => Math.max(1, d.width))
+						.attr('d', initialLinkAccessor.value)
+						.transition(t)
+						.delay(
+							(d: any) => constants.duration.short * ((d.source.depth || 0) + 1)
+						)
+						.attr('d', finalLinkAccessor.value),
+				update =>
+					update
+						.classed(
+							'raise',
+							(d: any) =>
+								shouldHighlight(d, {
+									trueValue: true,
+									falseValue: false,
+								}) as boolean
+						)
+						.transition(t)
+						.attr('d', finalLinkAccessor.value)
+						.attr('stroke', (d: any) =>
+							shouldHighlight(d, {
+								trueValue: constants.linkColorHighlight,
+								falseValue: constants.linkColor,
+							})
+						)
+						.attr('stroke-width', (d: any) =>
+							shouldHighlight(d, {
+								trueValue: 1.5,
+								falseValue: 1,
+							})
+						),
+				exit => exit.transition(t).attr('d', initialLinkAccessor.value).remove()
 			)
-			.attr('stroke-width', (d: any) =>
-				shouldHighlight(d, {
-					trueValue: 1.5,
-					falseValue: 1,
-				})
-			)
-			.classed('raise', function (d: any) {
-				// Using function syntax to ensure type compatibility with D3's classed method
-				return shouldHighlight(d, {
-					trueValue: true,
-					falseValue: false,
-				}) as boolean
-			})
 
 		// Raise highlighted links to appear on top
 		select(nodeRef.value).selectAll('path.raise').raise()

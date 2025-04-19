@@ -1,5 +1,11 @@
-import {sankey, sankeyJustify, sankeyLeft} from 'd3-sankey'
-import {computed, reactive, ComputedRef, UnwrapRef} from 'vue'
+import {
+	sankey,
+	sankeyCenter,
+	sankeyJustify,
+	sankeyLeft,
+	sankeyRight,
+} from 'd3-sankey'
+import {computed, ComputedRef, UnwrapRef} from 'vue'
 
 export interface SankeyNode {
 	id: string
@@ -63,9 +69,9 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 			case 'justify':
 				return sankeyJustify
 			case 'right':
-				return (node: SankeyNode, n: number) => n - 1 - node.depth
+				return sankeyRight
 			case 'center':
-				return (node: SankeyNode, n: number) => (n - 1 - node.depth) / 2
+				return sankeyCenter
 			default:
 				return sankeyLeft
 		}
