@@ -78,7 +78,6 @@
 		labelDatum.value = d && typeof d === 'object' ? d : {}
 	}
 
-	// Performance optimization - reset highlight when component unmounts
 	watchEffect(onCleanup => {
 		onCleanup(() => {
 			labelId.value = ''
