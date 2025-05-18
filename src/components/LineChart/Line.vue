@@ -4,20 +4,28 @@
 	import {select} from 'd3-selection'
 	import {curveStep, line as lineFunc} from 'd3-shape'
 	import {computed, onMounted, ref} from 'vue'
+	import type {PropType} from 'vue'
 
 	type Datum = {
 		date: Date
 		value: number
 	}
 
-	interface Props {
-		data: Datum[]
-		gradientId?: string
-		x: ScaleTime<number, number, never>
-		y: ScaleLinear<number, number, never>
-	}
-
-	const props = defineProps<Props>()
+	const props = defineProps({
+		data: {
+			type: Array as PropType<Datum[]>,
+			required: true,
+		},
+		gradientId: String,
+		x: {
+			type: Function as PropType<ScaleTime<number, number, never>>,
+			required: true,
+		},
+		y: {
+			type: Function as PropType<ScaleLinear<number, number, never>>,
+			required: true,
+		},
+	})
 
 	const stroke = computed(() =>
 		props.gradientId ? `url(#${props.gradientId})` : 'steelblue'
@@ -39,9 +47,9 @@
 			.attr('fill', 'none')
 			.attr('stroke', stroke.value)
 			.attr('stroke-width', 1.5)
-			.attr('d', line.value)
+			.attr('d', line.value as any)
 
-		const totalLength = path.node().getTotalLength()
+		const totalLength = path.node()!.getTotalLength()
 
 		path
 			.attr('stroke-dasharray', totalLength)
