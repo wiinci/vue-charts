@@ -1,17 +1,25 @@
-<script setup>
+<script setup lang="ts">
 	import LineChart from '@/components/LineChart/LineChart.vue'
 	import Sankey from '@/components/Sankey/Sankey.vue'
 	import aaplCsvData from '@/data/aapl.csv?raw'
 	import sankeyJsonData from '@/data/edges2.json'
 	import {ref} from 'vue'
+	import type {SankeyLink} from '@/composables/useNodesAndLinks'
 
-	const nodeAlign = ref('left')
+	// Taking advantage of Vue 3.5's improved reactivity
+	const nodeAlign = ref<'left' | 'justify' | 'right' | 'center'>('left')
 	const nodeId = ref('id')
 	const nodePadding = ref(1e9)
 	const nodeWidth = ref(1e-9)
 	const sort = ref(false)
-	const sankeyData = Object.freeze(sankeyJsonData)
-	const lineData = Object.freeze(aaplCsvData)
+
+	// Convert the JSON data to proper SankeyLink format with value property
+	const sankeyData = sankeyJsonData.map((item: any) => ({
+		...item,
+		value: 1, // Add a default value since it's required by the SankeyLink type
+	})) as SankeyLink[]
+
+	const lineData = aaplCsvData
 </script>
 
 <template>

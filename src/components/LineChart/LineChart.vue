@@ -16,57 +16,58 @@
 		value: number
 	}
 
-	const props = withDefaults(
-		defineProps<{
-			data: Datum[] | string
-			height?: number
-			marginBottom?: number
-			marginLeft?: number
-			marginRight?: number
-			marginTop?: number
-			width?: number
-		}>(),
-		{
-			height: 480,
-			marginBottom: 40,
-			marginLeft: 50,
-			marginRight: 20,
-			marginTop: 50,
-			width: 960,
-		}
-	)
+	const {
+		data,
+		height = 480,
+		marginBottom = 40,
+		marginLeft = 50,
+		marginRight = 20,
+		marginTop = 50,
+		width = 960,
+	} = defineProps<{
+		data: Datum[] | string
+		height?: number
+		marginBottom?: number
+		marginLeft?: number
+		marginRight?: number
+		marginTop?: number
+		width?: number
+	}>()
 
 	const parseTime = timeParse('%Y-%m-%d')
 
-	const data = computed(() =>
-		csvParse(props.data as unknown as string, (d: any) => {
+	const cdata = computed(() =>
+		csvParse(data as unknown as string, (d: any) => {
 			d.date = parseTime(d.date.toString())!
 			d.value = +d.value
 			return d
 		}).sort((a: Datum, b: Datum) => ascending(a.date, b.date))
 	)
 
-	const width = computed(
-		() => props.width - props.marginLeft - props.marginRight
-	)
-	const height = computed(
-		() => props.height - props.marginTop - props.marginBottom
-	)
+	const cwidth = computed(() => width - marginLeft - marginRight)
+	const cheight = computed(() => height - marginTop - marginBottom)
 
 	const x = computed(() =>
-		scaleUtc(extent(data.value, (d: Datum) => d.date) as [Date, Date], [
+		scaleUtc(extent(cdata.value, (d: Datum) => d.date) as [Date, Date], [
 			0,
-			width.value,
+			cwidth.value,
 		])
 	)
+
 	const y = computed(() =>
 		scaleLinear(
-			[0, max(data.value, (d: Datum) => d.value) as number],
-			[height.value, 0]
+			[0, max(cdata.value, (d: Datum) => d.value) as number],
+			[cheight.value, 0]
 		)
 	)
 
-	const moveTo = ref({d: null})
+	// Initialize with a default datum to satisfy the type requirements
+	const defaultDatum: Datum = {
+		date: new Date(),
+		value: 0,
+	}
+
+	const moveTo = ref<{d: Datum}>({d: defaultDatum})
 	const handleMoveTo = ({d}: {d: Datum}) => {
 		moveTo.value = {d}
 	}
@@ -76,47 +77,47 @@
 
 <template>
 	<Chart
-		:height="props.height"
-		:marginLeft="props.marginLeft"
-		:marginTop="props.marginTop"
-		:width="props.width"
+		:height="height"
+		:marginLeft="marginLeft"
+		:marginTop="marginTop"
+		:width="width"
 	>
 		<Tooltip
-			:data="data"
-			:height="height"
+			:data="cdata"
+			:height="cheight"
 			:move-to="moveTo"
-			:width="width"
+			:width="cwidth"
 		/>
 		<Axis
 			:y="y"
-			:width="width"
+			:width="cwidth"
 		/>
 		<Gradient
 			:domain="y.domain()"
 			:end="0.8"
-			:height="props.height"
+			:height="cheight"
 			:id="'line-gradient'"
-			:marginBottom="props.marginBottom"
-			:marginTop="props.marginTop"
+			:marginBottom="marginBottom"
+			:marginTop="marginTop"
 			:start="0"
 			:ticks="10"
 		/>
 		<Line
-			:data="data"
+			:data="cdata"
 			:gradientId="'line-gradient'"
 			:x="x"
 			:y="y"
 		/>
 		<Axis
-			:height="height"
-			:width="width"
+			:height="cheight"
+			:width="cwidth"
 			:x="x"
 		/>
 		<Voronoi
 			:classKey="'linechart'"
-			:data="data"
-			:height="height"
-			:width="width"
+			:data="cdata"
+			:height="cheight"
+			:width="cwidth"
 			:xAccessor="xAccessor"
 			@move-to="handleMoveTo"
 		/>
