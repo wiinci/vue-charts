@@ -1,12 +1,16 @@
 <script setup lang="ts">
-	import LineChart from '@/components/LineChart/LineChart.vue'
-	import Sankey from '@/components/Sankey/Sankey.vue'
+	import type {SankeyLink} from '@/composables/useNodesAndLinks'
 	import aaplCsvData from '@/data/aapl.csv?raw'
 	import sankeyJsonData from '@/data/edges2.json'
-	import {ref} from 'vue'
-	import type {SankeyLink} from '@/composables/useNodesAndLinks'
+	import {defineAsyncComponent, ref, Suspense} from 'vue'
 
-	// Taking advantage of Vue 3.5's improved reactivity
+	const Sankey = defineAsyncComponent(
+		() => import('./components/Sankey/Sankey.vue')
+	)
+	const LineChart = defineAsyncComponent(
+		() => import('./components/LineChart/LineChart.vue')
+	)
+
 	const nodeAlign = ref<'left' | 'justify' | 'right' | 'center'>('left')
 	const nodeId = ref('id')
 	const nodePadding = ref(1e9)
