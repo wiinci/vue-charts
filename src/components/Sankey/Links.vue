@@ -57,7 +57,8 @@
 			processHoveredNode(labelHoverDatum.value)
 		}
 
-		const t = transition().duration(constants.duration.short)
+		const tshort = transition().duration(constants.duration.short)
+		const tfast = transition().duration(constants.duration.fast)
 
 		select(nodeRef.value)
 			.selectAll('path')
@@ -75,11 +76,15 @@
 						)
 						.attr('stroke-width', (d: any) => Math.max(1, d.width))
 						.attr('d', initialLinkAccessor.value)
-						.transition(t)
-						.delay(
-							(d: any) => constants.duration.short * ((d.source.depth || 0) + 1)
-						)
-						.attr('d', finalLinkAccessor.value),
+						.call(enter =>
+							enter
+								.transition(tfast)
+								.delay(
+									(d: any) =>
+										constants.duration.short * ((d.source.depth || 0) + 1)
+								)
+								.attr('d', finalLinkAccessor.value)
+						),
 				update =>
 					update
 						.classed(
@@ -90,7 +95,7 @@
 									falseValue: false,
 								}) as boolean
 						)
-						.transition(t)
+						.transition(tfast)
 						.attr('d', finalLinkAccessor.value)
 						.attr('stroke', (d: any) =>
 							shouldHighlight(d, {
@@ -104,7 +109,8 @@
 								falseValue: 1,
 							})
 						),
-				exit => exit.transition(t).attr('d', initialLinkAccessor.value).remove()
+				exit =>
+					exit.transition(tshort).attr('d', initialLinkAccessor.value).remove()
 			)
 
 		// Raise highlighted links to appear on top

@@ -24,7 +24,8 @@
 	watchEffect(() => {
 		if (!nodeRef.value) return
 
-		const t = transition().duration(constants.duration.short)
+		const tshort = transition().duration(constants.duration.short)
+		const tfast = transition().duration(constants.duration.fast)
 
 		select(nodeRef.value)
 			.selectAll('rect')
@@ -39,19 +40,24 @@
 						.attr('x', (d: any) => props.xAccessor(d))
 						.attr('y', (d: any) => props.yAccessor(d))
 						.attr('opacity', 0)
-						.on('click', (e, d: any) => emit('click', d[props.nodeId]))
-						.transition(t)
-						.delay((d: any) => constants.duration.medium * ((d.depth || 0) + 1))
-						.attr('opacity', 1),
+						.on('click', (_, d: any) => emit('click', d[props.nodeId]))
+						.call(enter =>
+							enter
+								.transition(tfast)
+								.delay(
+									(d: any) => constants.duration.medium * ((d.depth || 0) + 1)
+								)
+								.attr('opacity', 1)
+						),
 				update =>
 					update
-						.transition(t)
+						.transition(tfast)
 						.attr('height', (d: any) => Math.max(0, d.y1 - d.y0))
 						.attr('width', (d: any) => d.x1 - d.x0)
 						.attr('x', (d: any) => props.xAccessor(d))
 						.attr('y', (d: any) => props.yAccessor(d))
 						.attr('opacity', 1),
-				exit => exit.transition(t).attr('opacity', 0).remove()
+				exit => exit.transition(tshort).attr('opacity', 0).remove()
 			)
 	})
 </script>

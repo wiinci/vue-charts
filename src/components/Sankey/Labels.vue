@@ -38,7 +38,8 @@
 		if (!nodeRef.value) return
 
 		// Create a fresh transition for each effect run
-		const t = transition().duration(constants.duration.short)
+		const tshort = transition().duration(constants.duration.short)
+		const tfast = transition().duration(constants.duration.fast)
 
 		select(nodeRef.value)
 			.selectAll('text')
@@ -60,7 +61,7 @@
 						.attr('opacity', 1e-9)
 						.call((enter: any) =>
 							enter
-								.transition(t)
+								.transition(tfast)
 								.delay(
 									(d: SankeyNode) =>
 										constants.duration.short * ((d.depth || 0) + 1)
@@ -73,7 +74,7 @@
 						.attr('x', getXPosition.value)
 						.attr('y', getYPosition.value)
 						.text((d: SankeyNode) => d[props.nodeId]),
-				exit => exit.transition(t).attr('opacity', 0).remove()
+				exit => exit.transition(tshort).attr('opacity', 0).remove()
 			)
 	})
 </script>
