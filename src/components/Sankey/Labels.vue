@@ -64,7 +64,7 @@
 								.transition(tfast)
 								.delay(
 									(d: SankeyNode) =>
-										constants.duration.short * ((d.depth || 0) + 1)
+										constants.duration.fast * ((d.depth || 0) + 1)
 								)
 								.attr('opacity', 1)
 						),
@@ -74,7 +74,7 @@
 						.attr('x', getXPosition.value)
 						.attr('y', getYPosition.value)
 						.text((d: SankeyNode) => d[props.nodeId]),
-				exit => exit.transition(tshort).attr('opacity', 0).remove()
+				exit => exit.transition(tfast).attr('opacity', 0).remove()
 			)
 	})
 </script>

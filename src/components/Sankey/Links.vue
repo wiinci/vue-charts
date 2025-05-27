@@ -81,7 +81,7 @@
 								.transition(tfast)
 								.delay(
 									(d: any) =>
-										constants.duration.short * ((d.source.depth || 0) + 1)
+										constants.duration.fast * ((d.source.depth || 0) + 1)
 								)
 								.attr('d', finalLinkAccessor.value)
 						),
@@ -95,7 +95,7 @@
 									falseValue: false,
 								}) as boolean
 						)
-						.transition(tfast)
+						.transition(tshort)
 						.attr('d', finalLinkAccessor.value)
 						.attr('stroke', (d: any) =>
 							shouldHighlight(d, {
@@ -105,12 +105,23 @@
 						)
 						.attr('stroke-width', (d: any) =>
 							shouldHighlight(d, {
-								trueValue: 1.5,
+								trueValue: 1.2,
 								falseValue: 1,
 							})
 						),
 				exit =>
-					exit.transition(tshort).attr('d', initialLinkAccessor.value).remove()
+					exit
+						.transition(tfast)
+						.delay((d: any) => {
+							const maxDepth = Math.max(
+								...data.map((link: any) => link.source.depth || 0)
+							)
+							return (
+								constants.duration.fast * (maxDepth - (d.source.depth || 0))
+							)
+						})
+						.attr('d', initialLinkAccessor.value)
+						.remove()
 			)
 
 		// Raise highlighted links to appear on top
