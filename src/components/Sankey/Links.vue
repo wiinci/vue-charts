@@ -57,7 +57,6 @@
 			processHoveredNode(labelHoverDatum.value)
 		}
 
-		const tshort = transition().duration(constants.duration.short)
 		const tfast = transition().duration(constants.duration.fast)
 
 		select(nodeRef.value)
@@ -95,7 +94,7 @@
 									falseValue: false,
 								}) as boolean
 						)
-						.transition(tshort)
+						.transition(tfast)
 						.attr('d', finalLinkAccessor.value)
 						.attr('stroke', (d: any) =>
 							shouldHighlight(d, {

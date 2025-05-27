@@ -38,7 +38,6 @@
 		if (!nodeRef.value) return
 
 		// Create a fresh transition for each effect run
-		const tshort = transition().duration(constants.duration.short)
 		const tfast = transition().duration(constants.duration.fast)
 
 		select(nodeRef.value)

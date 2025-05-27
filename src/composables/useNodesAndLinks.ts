@@ -85,16 +85,12 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 		() => props.width - props.marginLeft - props.marginRight
 	)
 
-	// Sort function based on sort property
-	const sorted = computed(() => (props.sort ? null : undefined))
-
 	// Create sankey generator with configuration
-	const sankeyGenerator = computed(() =>
-		sankey()
+	const sankeyGenerator = computed(() => {
+		const generator = sankey()
 			.nodeAlign(align.value)
-			.nodeId(d => d[props.nodeId])
+			.nodeId(d => (d as any)[props.nodeId])
 			.nodePadding(props.nodePadding)
-			.nodeSort(sorted.value)
 			.nodeWidth(props.nodeWidth)
 			.extent([
 				[props.marginLeft, props.marginTop],
@@ -103,7 +99,13 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 					chartHeight.value + props.marginTop,
 				],
 			])
-	)
+
+		if (props.sort) {
+			generator.nodeSort(() => 0)
+		}
+
+		return generator
+	})
 
 	// Process data to ensure all nodes have a value
 	const processedData = computed(() => {

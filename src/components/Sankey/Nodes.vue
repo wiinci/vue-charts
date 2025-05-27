@@ -24,7 +24,6 @@
 	watchEffect(() => {
 		if (!nodeRef.value) return
 
-		const tshort = transition().duration(constants.duration.short)
 		const tfast = transition().duration(constants.duration.fast)
 
 		select(nodeRef.value)
@@ -57,7 +56,7 @@
 						.attr('x', (d: any) => props.xAccessor(d))
 						.attr('y', (d: any) => props.yAccessor(d))
 						.attr('opacity', 1),
-				exit => exit.transition(tshort).attr('opacity', 0).remove()
+				exit => exit.transition(tfast).attr('opacity', 0).remove()
 			)
 	})
 </script>
