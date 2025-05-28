@@ -7,7 +7,7 @@
 		SankeyNode,
 		SankeyProps,
 		useNodesAndLinks,
-	} from '@/composables/useNodesAndLinks'
+	} from '@/hooks/useNodesAndLinks2'
 	import {computed, provide, ref, watchEffect} from 'vue'
 	import Labels from './Labels.vue'
 	import Links from './Links.vue'
@@ -45,6 +45,8 @@
 
 	// Use the refactored composables
 	const {chartWidth, nodes, links} = useNodesAndLinks(props as SankeyProps)
+	console.log('Sankey nodes:', nodes.value)
+	console.log('Sankey links:', links.value)
 
 	// Reactive state for highlight functionality
 	const labelDatum = ref<SankeyNode | {}>({})
