@@ -1,8 +1,9 @@
 <script setup lang="ts">
 	import type {SankeyLink} from '@/composables/useNodesAndLinks'
 	import aaplCsvData from '@/data/aapl.csv?raw'
-	import sankeyJsonData from '@/data/tables.json'
-	import {defineAsyncComponent, ref, Suspense} from 'vue'
+	import sankeyJsonData from '@/data/edges2.json'
+	// import sankeyJsonData from '@/data/tables.json'
+	import {defineAsyncComponent, ref} from 'vue'
 
 	const Sankey = defineAsyncComponent(
 		() => import('./components/Sankey/Sankey.vue')
@@ -18,7 +19,7 @@
 	const sort = ref(false)
 
 	// Convert the JSON data to proper SankeyLink format with value property
-	const sankeyData = sankeyJsonData.tables.map((item: any) => ({
+	const sankeyData = sankeyJsonData.map((item: any) => ({
 		...item,
 		value: 1, // Add a default value since it's required by the SankeyLink type
 	})) as SankeyLink[]

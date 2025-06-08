@@ -1,4 +1,4 @@
-import {computed, Ref, ComputedRef} from 'vue'
+import {computed, Ref} from 'vue'
 
 interface LinkData {
 	source: {
