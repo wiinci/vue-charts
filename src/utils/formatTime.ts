@@ -6,7 +6,7 @@ const formatDay = utcFormat('%b %d')
 const formatMonth = utcFormat('%b')
 const formatYear = utcFormat('%Y')
 
-export default function formatTime({date}) {
+export default function formatTime({date}: {date: Date}) {
 	if (utcDay(date) < date) {
 		return formatHour(date)
 	} else if (utcMonth(date) < date) {

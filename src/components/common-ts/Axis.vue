@@ -19,7 +19,9 @@
 		return axisBottom(props.x!)
 			.ticks(props.width! / 80)
 			.tickSizeOuter(0)
-			.tickFormat(d => formatTime({date: d}))
+			.tickFormat(d =>
+				formatTime({date: d instanceof Date ? d : new Date(d as number)})
+			)
 	}
 
 	function tickFn(ticks: any) {
@@ -30,11 +32,18 @@
 	onMounted(() => {
 		if (props.x) {
 			select(axisRef.value).call(axis() as any)
-			xAxisPatterns({node: axisRef.value, height: props.height!})
+			if (axisRef.value) {
+				xAxisPatterns({
+					node: axisRef.value as SVGGElement,
+					height: props.height!,
+				})
+			}
 		} else {
 			const ticks = smartTicks(props.y!)
 			select(axisRef.value).call(tickFn(ticks) as any)
-			yAxisPatterns({node: axisRef.value, width: props.width!})
+			if (axisRef.value) {
+				yAxisPatterns({node: axisRef.value as SVGGElement, width: props.width!})
+			}
 		}
 	})
 </script>

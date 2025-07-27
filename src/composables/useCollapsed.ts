@@ -25,17 +25,16 @@ export function useCollapsed(
 	 * Check if all source nodes of a given node are collapsed
 	 */
 	function allSourcesCollapsed(node: SankeyNode): boolean {
-		return (
-			node.targetLinks &&
-			node.targetLinks.length > 0 &&
-			node.targetLinks.every(link => {
-				const sourceId =
-					typeof link.source === 'object'
-						? link.source.id
-						: (link.source as string)
-				return collapsedNodes.value.has(sourceId)
-			})
-		)
+		if (!node.targetLinks || node.targetLinks.length === 0) {
+			return false
+		}
+		return node.targetLinks.every(link => {
+			const sourceId =
+				typeof link.source === 'object'
+					? link.source.id
+					: (link.source as string)
+			return collapsedNodes.value.has(sourceId)
+		})
 	}
 
 	/**

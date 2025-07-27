@@ -1,6 +1,12 @@
 import {select} from 'd3-selection'
 
-export default function xAxisPatterns({node, height}) {
+export default function xAxisPatterns({
+	node,
+	height,
+}: {
+	node: SVGGElement
+	height: number
+}) {
 	const selection = select(node).attr('transform', `translate(0, ${height})`)
 
 	selection
