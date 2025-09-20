@@ -16,23 +16,15 @@
 	const nodeRef = ref<SVGGElement | null>(null)
 
 	// Pre-compute link accessors for better performance
-	const initialLinkAccessor = computed(() => {
-		const generator = linkHorizontal()
-			.source((d: any) => [d.source.x0, d.source.y0])
-			.target((d: any) => [d.source.x0, d.source.y0])
-		// Return a function that generates a valid SVG path string
-		return (d: any) => generator(d) || ''
-	})
+	const initialGenerator = linkHorizontal()
+		.source((d: any) => [d.source.x0, d.source.y0])
+		.target((d: any) => [d.source.x0, d.source.y0])
+	// Accessor to generate SVG path string
+	const initialLinkAccessor = (d: any) => initialGenerator(d) || ''
 
-	// Create an adapter function that wraps the sankeyLinkHorizontal generator
-	// to fix TypeScript incompatibility between SankeyLink and D3's expected types
-	const finalLinkAccessor = computed(() => {
-		const generator = sankeyLinkHorizontal()
-		// Return a function that accepts our SankeyLink and passes it to the generator
-		return function (d: any) {
-			return generator(d)
-		}
-	})
+	// Create an adapter function for sankeyLinkHorizontal generator
+	const finalGenerator = sankeyLinkHorizontal()
+	const finalLinkAccessor = (d: any) => finalGenerator(d)
 
 	const labelHoverDatum = inject<Ref<any>>('labelDatum', ref({}))
 	const labelHoverId = inject<Ref<string>>('labelId', ref(''))
@@ -74,7 +66,7 @@
 							})
 						)
 						.attr('stroke-width', (d: any) => Math.max(1, d.width))
-						.attr('d', initialLinkAccessor.value)
+						.attr('d', initialLinkAccessor)
 						.call(enter =>
 							enter
 								.transition(tfast)
@@ -82,7 +74,7 @@
 									(d: any) =>
 										constants.duration.fast * ((d.source.depth || 0) + 1)
 								)
-								.attr('d', finalLinkAccessor.value)
+								.attr('d', finalLinkAccessor)
 						),
 				update =>
 					update
@@ -95,7 +87,7 @@
 								}) as boolean
 						)
 						.transition(tfast)
-						.attr('d', finalLinkAccessor.value)
+						.attr('d', finalLinkAccessor)
 						.attr('stroke', (d: any) =>
 							shouldHighlight(d, {
 								trueValue: constants.linkColorHighlight,
@@ -119,7 +111,7 @@
 								constants.duration.fast * (maxDepth - (d.source.depth || 0))
 							)
 						})
-						.attr('d', initialLinkAccessor.value)
+						.attr('d', initialLinkAccessor)
 						.remove()
 			)
 

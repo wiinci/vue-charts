@@ -6,9 +6,12 @@ export default function smartTicks(
 	const max = y.invert(0)
 	let step = Math.pow(10, Math.floor(Math.log10(max)))
 
-	if (max / step < 2) {
+	// Adjust step based on ratio without else clauses
+	const ratio = max / step
+	if (ratio < 2) {
 		step /= 5
-	} else if (max / step < 5) {
+	}
+	if (ratio >= 2 && ratio < 5) {
 		step /= 2
 	}
 

@@ -1,4 +1,4 @@
-import {computed, ComputedRef, ref, Ref} from 'vue'
+import {computed, ComputedRef, ref, Ref, watchEffect} from 'vue'
 import {SankeyLink, SankeyNode} from './useNodesAndLinks'
 
 export interface CollapsedResult {
@@ -59,7 +59,9 @@ export function useCollapsed(
 			) {
 				collapsedNodes.value.delete(targetId)
 				expandDownstream(targetId)
-			} else if (!collapsedNodes.value.has(targetId)) {
+				return
+			}
+			if (!collapsedNodes.value.has(targetId)) {
 				expandDownstream(targetId)
 			}
 		})
@@ -158,18 +160,18 @@ export function useCollapsed(
 			const downstreamNode = getNodeById(dId)
 			if (!downstreamNode) return
 
+			// For root sources, check if all paths to this node are collapsed
 			if (isRootSource) {
-				// For root sources, check if all paths to this node are collapsed
 				const roots = findNodeRootSources(dId)
 				const allRootCollapsed = Array.from(roots).every(
 					rootId => rootId === id || collapsedNodes.value.has(rootId)
 				)
-
 				if (allRootCollapsed) {
 					collapsedNodes.value.add(dId)
 				}
-			} else if (downstreamNode.targetLinks) {
-				// For non-root nodes, check if all sources are collapsed
+			}
+			// For non-root nodes, check if all sources are collapsed
+			if (!isRootSource && downstreamNode.targetLinks) {
 				const allSrcCollapsed = downstreamNode.targetLinks.every(link => {
 					const srcId =
 						typeof link.source === 'object'
@@ -177,7 +179,6 @@ export function useCollapsed(
 							: (link.source as string)
 					return srcId === id || collapsedNodes.value.has(srcId)
 				})
-
 				if (allSrcCollapsed) {
 					collapsedNodes.value.add(dId)
 				}
@@ -186,9 +187,11 @@ export function useCollapsed(
 	}
 
 	/**
-	 * Compute only those downstream nodes whose all source inputs are collapsed
+	 * Track collapsed descendants of collapsed nodes via watchEffect
 	 */
-	const collapsedDescendants = computed(() => {
+	const collapsedDescendants = ref<Set<string>>(new Set())
+
+	watchEffect(() => {
 		const desc = new Set<string>()
 		// recursive traverse only when all sources to child are collapsed
 		function dfs(id: string) {
@@ -207,7 +210,7 @@ export function useCollapsed(
 			})
 		}
 		collapsedNodes.value.forEach(id => dfs(id))
-		return desc
+		collapsedDescendants.value = desc
 	})
 
 	/**

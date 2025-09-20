@@ -38,12 +38,12 @@
 					height: props.height!,
 				})
 			}
-		} else {
-			const ticks = smartTicks(props.y!)
-			select(axisRef.value).call(tickFn(ticks) as any)
-			if (axisRef.value) {
-				yAxisPatterns({node: axisRef.value as SVGGElement, width: props.width!})
-			}
+			return
+		}
+		const ticks = smartTicks(props.y!)
+		select(axisRef.value).call(tickFn(ticks) as any)
+		if (axisRef.value) {
+			yAxisPatterns({node: axisRef.value as SVGGElement, width: props.width!})
 		}
 	})
 </script>

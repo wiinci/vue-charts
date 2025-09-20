@@ -5,7 +5,7 @@ import {
 	sankeyLeft,
 	sankeyRight,
 } from 'd3-sankey'
-import {computed, ComputedRef, UnwrapRef} from 'vue'
+import {computed, ComputedRef, UnwrapRef, ref, watchEffect} from 'vue'
 
 export interface SankeyNode {
 	id: string
@@ -61,8 +61,6 @@ export interface SankeyResult {
 }
 
 export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
-	const nodeById = new Map<string, SankeyNode>()
-
 	// Compute alignment function based on nodeAlign property
 	const align = computed(() => {
 		switch (props.nodeAlign) {
@@ -85,9 +83,9 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 		() => props.width - props.marginLeft - props.marginRight
 	)
 
-	// Create sankey generator with configuration
-	const sankeyGenerator = computed(() => {
-		const generator = sankey()
+	// Create sankey generator ref with configuration (no side-effects in computed)
+	const sankeyGenerator = ref(
+		sankey()
 			.nodeAlign(align.value)
 			.nodeId(d => (d as any)[props.nodeId])
 			.nodePadding(props.nodePadding)
@@ -99,34 +97,37 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 					chartHeight.value + props.marginTop,
 				],
 			])
-
+	)
+	watchEffect(() => {
+		const gen = sankey()
+			.nodeAlign(align.value)
+			.nodeId(d => (d as any)[props.nodeId])
+			.nodePadding(props.nodePadding)
+			.nodeWidth(props.nodeWidth)
+			.extent([
+				[props.marginLeft, props.marginTop],
+				[
+					chartWidth.value + props.marginLeft,
+					chartHeight.value + props.marginTop,
+				],
+			])
 		if (props.sort) {
-			generator.nodeSort(() => 0)
+			gen.nodeSort(() => 0)
 		}
-
-		return generator
+		sankeyGenerator.value = gen
 	})
 
-	// Process data to ensure all nodes have a value
-	const processedData = computed(() => {
-		// Reset node map
-		nodeById.clear()
-
-		// Ensure all links have a value
-		const links = props.data.map(link => ({
-			...link,
-			value: link.value || 1,
-		}))
-
-		// Build node map from links
+	// Process data to ensure all nodes have a value (moved from computed to ref+watchEffect)
+	const processedData = ref<SankeyData>({nodes: [], links: []})
+	watchEffect(() => {
+		const nodeById = new Map<string, SankeyNode>()
+		const links = props.data.map(link => ({...link, value: link.value || 1}))
 		for (const link of links) {
 			const sourceId =
 				typeof link.source === 'string' ? link.source : link.source.id
 			const targetId =
 				typeof link.target === 'string' ? link.target : link.target.id
-
 			if (!nodeById.has(sourceId)) {
-				// Add default required properties to satisfy SankeyNode interface
 				nodeById.set(sourceId, {
 					[props.nodeId]: sourceId,
 					id: sourceId,
@@ -137,9 +138,7 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 					value: 0,
 				} as SankeyNode)
 			}
-
 			if (!nodeById.has(targetId)) {
-				// Add default required properties to satisfy SankeyNode interface
 				nodeById.set(targetId, {
 					[props.nodeId]: targetId,
 					id: targetId,
@@ -151,8 +150,7 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 				} as SankeyNode)
 			}
 		}
-
-		return {
+		processedData.value = {
 			nodes: Array.from(nodeById.values()),
 			links,
 		}
