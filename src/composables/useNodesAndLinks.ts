@@ -61,19 +61,14 @@ export interface SankeyResult {
 }
 
 export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
-	// Compute alignment function based on nodeAlign property
-	const align = computed(() => {
-		switch (props.nodeAlign) {
-			case 'justify':
-				return sankeyJustify
-			case 'right':
-				return sankeyRight
-			case 'center':
-				return sankeyCenter
-			default:
-				return sankeyLeft
-		}
-	})
+	// Map nodeAlign to the corresponding sankey alignment function
+	const alignMap = {
+		justify: sankeyJustify,
+		left: sankeyLeft,
+		right: sankeyRight,
+		center: sankeyCenter,
+	} as const
+	const align = computed(() => alignMap[props.nodeAlign])
 
 	// Compute chart dimensions
 	const chartHeight = computed(
