@@ -131,6 +131,27 @@ export function useCollapsed(
 	/**
 	 * Toggle the collapsed state of a node
 	 */
+	// Helper: decide if a downstream node should be collapsed when a parent collapses
+	function shouldCollapseDescendant(
+		parentId: string,
+		dId: string,
+		isRootSource: boolean
+	): boolean {
+		const downstreamNode = getNodeById(dId)
+		if (!downstreamNode || !downstreamNode.targetLinks) return false
+		if (isRootSource) {
+			const roots = findNodeRootSources(dId)
+			return Array.from(roots).every(
+				rootId => rootId === parentId || collapsedNodes.value.has(rootId)
+			)
+		}
+		return downstreamNode.targetLinks.every(link => {
+			const srcId =
+				typeof link.source === 'object' ? link.source.id : link.source
+			return srcId === parentId || collapsedNodes.value.has(srcId)
+		})
+	}
+
 	function toggleCollapse(nodeOrId: string | SankeyNode): void {
 		const id = typeof nodeOrId === 'object' ? nodeOrId.id : nodeOrId
 
@@ -141,47 +162,17 @@ export function useCollapsed(
 			return
 		}
 
-		// Otherwise, collapse the node
+		// Otherwise, collapse the node and evaluate descendants
 		collapsedNodes.value.add(id)
 		const current = getNodeById(id)
-
 		if (!current) return
-
-		// Check if the node is a root source
 		const isRootSource =
 			!current.targetLinks || current.targetLinks.length === 0
-
-		// Collect all downstream nodes
 		const downstream = collectDownstream(id)
-		downstream.delete(id) // Don't process the original node
-
-		// Process each downstream node
+		downstream.delete(id)
 		downstream.forEach(dId => {
-			const downstreamNode = getNodeById(dId)
-			if (!downstreamNode) return
-
-			// For root sources, check if all paths to this node are collapsed
-			if (isRootSource) {
-				const roots = findNodeRootSources(dId)
-				const allRootCollapsed = Array.from(roots).every(
-					rootId => rootId === id || collapsedNodes.value.has(rootId)
-				)
-				if (allRootCollapsed) {
-					collapsedNodes.value.add(dId)
-				}
-			}
-			// For non-root nodes, check if all sources are collapsed
-			if (!isRootSource && downstreamNode.targetLinks) {
-				const allSrcCollapsed = downstreamNode.targetLinks.every(link => {
-					const srcId =
-						typeof link.source === 'object'
-							? link.source.id
-							: (link.source as string)
-					return srcId === id || collapsedNodes.value.has(srcId)
-				})
-				if (allSrcCollapsed) {
-					collapsedNodes.value.add(dId)
-				}
+			if (shouldCollapseDescendant(id, dId, isRootSource)) {
+				collapsedNodes.value.add(dId)
 			}
 		})
 	}

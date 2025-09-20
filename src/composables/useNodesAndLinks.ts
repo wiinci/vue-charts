@@ -114,7 +114,9 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 
 	// Process data to ensure all nodes have a value (moved from computed to ref+watchEffect)
 	const processedData = ref<SankeyData>({nodes: [], links: []})
-	watchEffect(() => {
+
+	// Helper to build node map and ensure default node properties
+	function buildNodesAndLinks(): SankeyData {
 		const nodeById = new Map<string, SankeyNode>()
 		const links = props.data.map(link => ({...link, value: link.value || 1}))
 		for (const link of links) {
@@ -145,10 +147,11 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 				} as SankeyNode)
 			}
 		}
-		processedData.value = {
-			nodes: Array.from(nodeById.values()),
-			links,
-		}
+		return {nodes: Array.from(nodeById.values()), links}
+	}
+
+	watchEffect(() => {
+		processedData.value = buildNodesAndLinks()
 	})
 
 	// Generate the sankey diagram

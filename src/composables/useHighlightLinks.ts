@@ -1,4 +1,4 @@
-import {computed, Ref} from 'vue'
+import {ref, Ref} from 'vue'
 
 interface LinkData {
 	source: {
@@ -21,46 +21,47 @@ export function useHighlightLinks(
 	labelHoverId: Ref<string>,
 	collapsedNodes: Ref<Set<string>>
 ) {
-	// Collection arrays for sources and targets
-	const sourceIds = computed(() => new Set<string>())
-	const targetIds = computed(() => new Set<string>())
+	// Collections for sources and targets as refs
+	const sourceIds = ref(new Set<string>())
+	const targetIds = ref(new Set<string>())
 
-	/**
-	 * Collect all upstream sources of a node
-	 */
-	function collectTargets(node: any, visited = new Set<string>()) {
-		if (!node?.targetLinks?.length) return
-
-		for (const link of node.targetLinks) {
-			const sourceId = link.source.id
-			if (!visited.has(sourceId)) {
-				sourceIds.value.add(sourceId)
-				visited.add(sourceId)
-				// Only continue traversing if the source node is not collapsed
-				if (!collapsedNodes.value.has(sourceId)) {
-					collectTargets(link.source, visited)
+	// Generic traversal helper: traverses links on a node using the provided linkKey
+	function traverse(
+		node: any,
+		linkKey: 'targetLinks' | 'sourceLinks',
+		addId: (id: string) => void,
+		visited = new Set<string>()
+	) {
+		if (!node?.[linkKey]?.length) return
+		for (const link of node[linkKey]) {
+			const id = link[linkKey === 'targetLinks' ? 'source' : 'target'].id
+			if (!visited.has(id)) {
+				addId(id)
+				visited.add(id)
+				if (!collapsedNodes.value.has(id)) {
+					traverse(
+						link[linkKey === 'targetLinks' ? 'source' : 'target'],
+						linkKey,
+						addId,
+						visited
+					)
 				}
 			}
 		}
 	}
 
 	/**
+	 * Collect all upstream sources of a node
+	 */
+	function collectTargets(node: any) {
+		traverse(node, 'targetLinks', id => sourceIds.value.add(id))
+	}
+
+	/**
 	 * Collect all downstream targets of a node
 	 */
-	function collectSources(node: any, visited = new Set<string>()) {
-		if (!node?.sourceLinks?.length) return
-
-		for (const link of node.sourceLinks) {
-			const targetId = link.target.id
-			if (!visited.has(targetId)) {
-				targetIds.value.add(targetId)
-				visited.add(targetId)
-				// Only continue traversing if the target node is not collapsed
-				if (!collapsedNodes.value.has(targetId)) {
-					collectSources(link.target, visited)
-				}
-			}
-		}
+	function collectSources(node: any) {
+		traverse(node, 'sourceLinks', id => targetIds.value.add(id))
 	}
 
 	/**
@@ -103,8 +104,8 @@ export function useHighlightLinks(
 		targetIds.value.clear()
 
 		if (node) {
-			collectSources(node, new Set<string>())
-			collectTargets(node, new Set<string>())
+			collectSources(node)
+			collectTargets(node)
 		}
 	}
 
