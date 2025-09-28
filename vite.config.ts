@@ -28,9 +28,16 @@ export default defineConfig({
 		rollupOptions: {
 			output: {
 				manualChunks: {
-					d3: ['d3', 'd3-delaunay', 'd3-sankey'],
+					d3: ['d3-array', 'd3-scale', 'd3-selection', 'd3-sankey'],
+					charts: [
+						'./src/components/LineChart/LineChart.vue',
+						'./src/components/Sankey/Sankey.vue',
+					],
 				},
 			},
 		},
+	},
+	optimizeDeps: {
+		include: ['d3-sankey', 'd3-selection', 'd3-array'],
 	},
 })
