@@ -23,7 +23,6 @@
 		...item,
 		value: 1, // Add a default value since it's required by the SankeyLink type
 	})) as SankeyLink[]
-	console.log('sankeyData', sankeyData)
 	const lineData = aaplCsvData
 </script>
 

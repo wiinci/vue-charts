@@ -46,8 +46,6 @@
 
 	// Use the refactored composables
 	const {chartWidth, nodes, links} = useNodesAndLinks(props as SankeyProps)
-	console.log('Sankey nodes:', nodes)
-	console.log('Sankey links:', links)
 
 	// Reactive state for highlight functionality
 	const labelDatum = ref<SankeyNode | {}>({})
