@@ -9,7 +9,7 @@
 	import {csvParse} from 'd3-dsv'
 	import {scaleLinear, scaleUtc} from 'd3-scale'
 	import {timeParse} from 'd3-time-format'
-	import {computed, ref} from 'vue'
+	import {computed, shallowRef, watch, ref} from 'vue'
 
 	type Datum = {
 		date: Date
@@ -36,13 +36,24 @@
 
 	const parseTime = timeParse('%Y-%m-%d')
 
-	const cdata = computed(() =>
-		csvParse(data as unknown as string, (d: any) => {
-			d.date = parseTime(d.date.toString())!
-			d.value = +d.value
-			return d
-		}).sort((a: Datum, b: Datum) => ascending(a.date, b.date))
+	// Memoize CSV parsing: only re-run when `data` changes
+	const parsed = shallowRef<Datum[]>([])
+	watch(
+		() => data,
+		(str: Datum[] | string) => {
+			if (typeof str === 'string') {
+				parsed.value = csvParse(str, (d: any) => {
+					d.date = parseTime(d.date.toString())!
+					d.value = +d.value
+					return d
+				}).sort((a: Datum, b: Datum) => ascending(a.date, b.date))
+			} else {
+				parsed.value = str
+			}
+		},
+		{immediate: true}
 	)
+	const cdata = computed(() => parsed.value)
 
 	const cwidth = computed(() => width - marginLeft - marginRight)
 	const cheight = computed(() => height - marginTop - marginBottom)
