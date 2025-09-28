@@ -5,7 +5,7 @@ import {
 	sankeyLeft,
 	sankeyRight,
 } from 'd3-sankey'
-import {computed, ComputedRef, UnwrapRef, ref, watchEffect} from 'vue'
+import {computed, ComputedRef, UnwrapRef, ref, watchEffect, watch} from 'vue'
 
 export interface SankeyNode {
 	id: string
@@ -82,7 +82,7 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 	const sankeyGenerator = ref(
 		sankey()
 			.nodeAlign(align.value)
-			.nodeId(d => (d as any)[props.nodeId])
+			.nodeId((d: any) => (d as any)[props.nodeId])
 			.nodePadding(props.nodePadding)
 			.nodeWidth(props.nodeWidth)
 			.extent([
@@ -96,7 +96,7 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 	watchEffect(() => {
 		const gen = sankey()
 			.nodeAlign(align.value)
-			.nodeId(d => (d as any)[props.nodeId])
+			.nodeId((d: any) => (d as any)[props.nodeId])
 			.nodePadding(props.nodePadding)
 			.nodeWidth(props.nodeWidth)
 			.extent([
@@ -150,9 +150,14 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 		return {nodes: Array.from(nodeById.values()), links}
 	}
 
-	watchEffect(() => {
-		processedData.value = buildNodesAndLinks()
-	})
+	// Recompute nodes/links only when the input data array changes reference
+	watch(
+		() => props.data,
+		() => {
+			processedData.value = buildNodesAndLinks()
+		},
+		{immediate: true}
+	)
 
 	// Generate the sankey diagram
 	const sankeyData = computed(() =>
