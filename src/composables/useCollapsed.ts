@@ -72,25 +72,31 @@ export function useCollapsed(
 	 */
 	function collectDownstream(
 		nodeId: string,
-		visited = new Set<string>()
+		visited = new Set<string>(),
+		sourceDepth?: number
 	): Set<string> {
+		const node = getNodeById(nodeId)
+		const currentDepth = sourceDepth ?? node?.depth ?? 0
 		visited.add(nodeId)
 
-		links.value
-			.filter(link => {
-				const sourceId =
-					typeof link.source === 'object'
-						? link.source.id
-						: (link.source as string)
-				return sourceId === nodeId
-			})
-			.forEach(link => {
-				const targetId =
-					typeof link.target === 'object'
-						? link.target.id
-						: (link.target as string)
-				if (!visited.has(targetId)) collectDownstream(targetId, visited)
-			})
+		if (!node?.sourceLinks) {
+			return visited
+		}
+
+		node.sourceLinks.forEach(link => {
+			const targetNode =
+				typeof link.target === 'object'
+					? (link.target as SankeyNode)
+					: getNodeById(link.target as string)
+			if (!targetNode) return
+
+			const targetDepth = targetNode.depth ?? currentDepth + 1
+			if (targetDepth <= currentDepth) return
+
+			if (!visited.has(targetNode.id)) {
+				collectDownstream(targetNode.id, visited, targetDepth)
+			}
+		})
 
 		return visited
 	}
@@ -138,18 +144,30 @@ export function useCollapsed(
 		isRootSource: boolean
 	): boolean {
 		const downstreamNode = getNodeById(dId)
-		if (!downstreamNode || !downstreamNode.targetLinks) return false
+		if (!downstreamNode) return false
+
+		const incomingLinks = downstreamNode.targetLinks ?? []
+		if (incomingLinks.length === 0) {
+			return downstreamNode.height === 0
+		}
+
+		const immediateSourcesCollapsed = incomingLinks.every(link => {
+			const srcId =
+				typeof link.source === 'object' ? link.source.id : link.source
+			return srcId === parentId || collapsedNodes.value.has(srcId)
+		})
+
+		if (downstreamNode.height === 0) {
+			return immediateSourcesCollapsed
+		}
+
 		if (isRootSource) {
 			const roots = findNodeRootSources(dId)
 			return Array.from(roots).every(
 				rootId => rootId === parentId || collapsedNodes.value.has(rootId)
 			)
 		}
-		return downstreamNode.targetLinks.every(link => {
-			const srcId =
-				typeof link.source === 'object' ? link.source.id : link.source
-			return srcId === parentId || collapsedNodes.value.has(srcId)
-		})
+		return immediateSourcesCollapsed
 	}
 
 	function toggleCollapse(nodeOrId: string | SankeyNode): void {
@@ -184,23 +202,40 @@ export function useCollapsed(
 
 	watchEffect(() => {
 		const desc = new Set<string>()
-		// recursive traverse only when all sources to child are collapsed
-		function dfs(id: string) {
-			links.value.forEach(link => {
-				const sourceId =
-					typeof link.source === 'object' ? link.source.id : link.source
-				const targetId =
-					typeof link.target === 'object' ? link.target.id : link.target
-				if (sourceId === id) {
-					const node = getNodeById(targetId)
-					if (node && allSourcesCollapsed(node) && !desc.has(targetId)) {
-						desc.add(targetId)
-						dfs(targetId)
-					}
+		const collapsed = collapsedNodes.value
+		if (collapsed.size === 0) {
+			collapsedDescendants.value = desc
+			return
+		}
+
+		function dfs(node: SankeyNode, depth: number, branchMaxDepth: number) {
+			if (!node.sourceLinks) return
+			node.sourceLinks.forEach(link => {
+				const targetNode =
+					typeof link.target === 'object'
+						? (link.target as SankeyNode)
+						: getNodeById(link.target as string)
+				if (!targetNode) return
+				const targetDepth = targetNode.depth ?? depth + 1
+				if (targetDepth > branchMaxDepth) return
+				if (allSourcesCollapsed(targetNode) && !desc.has(targetNode.id)) {
+					desc.add(targetNode.id)
+					dfs(targetNode, targetDepth, branchMaxDepth)
 				}
 			})
 		}
-		collapsedNodes.value.forEach(id => dfs(id))
+
+		collapsed.forEach(id => {
+			const root = getNodeById(id)
+			if (!root) return
+			const rootDepth = root.depth ?? 0
+			const branchMaxDepth =
+				root.height !== undefined
+					? rootDepth + root.height
+					: Number.POSITIVE_INFINITY
+			dfs(root, rootDepth, branchMaxDepth)
+		})
+
 		collapsedDescendants.value = desc
 	})
 
