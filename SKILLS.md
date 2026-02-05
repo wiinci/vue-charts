@@ -33,17 +33,17 @@ Every complex visualization is composed of two primary agents:
 
 ```typescript
 export function useChartPlanner(props: ChartProps) {
-  // 1. Perception
-  const dimensions = computed(() => ({ w: props.width, h: props.height }));
+	// 1. Perception
+	const dimensions = computed(() => ({ w: props.width, h: props.height }))
 
-  // 2. Reasoning (The Algorithm)
-  const layout = computed(() => {
-    const generator = d3.layout();
-    return generator(props.data);
-  });
+	// 2. Reasoning (The Algorithm)
+	const layout = computed(() => {
+		const generator = d3.layout()
+		return generator(props.data)
+	})
 
-  // 3. Plan Output
-  return { nodes: layout.nodes, links: layout.links };
+	// 3. Plan Output
+	return { nodes: layout.nodes, links: layout.links }
 }
 ```
 
