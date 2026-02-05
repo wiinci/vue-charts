@@ -3,8 +3,8 @@ import { formatTime, smartTicks, xAxisPatterns, yAxisPatterns } from "@/utils";
 import { AxisScale, axisBottom, axisLeft } from "d3-axis";
 import { NumberValue, ScaleLinear } from "d3-scale";
 import { select } from "d3-selection";
-import { onMounted, ref } from "vue";
 import type { PropType } from "vue";
+import { ref, watchEffect } from "vue";
 
 const props = defineProps({
   height: Number,
@@ -26,24 +26,29 @@ function tickFn(ticks: any) {
   return axisLeft(props.y!.nice(ticks)).tickSize(-props.width!).ticks(ticks);
 }
 
-// X-axis
-onMounted(() => {
+// X-axis & Y-axis reactivity
+watchEffect(() => {
+  if (!axisRef.value) return
+
+  // Select the group and clear previous content or let D3 axis handle updates?
+  // D3 axis handles updates if we call it again.
+  // But xAxisPatterns/yAxisPatterns might append things that need clearing?
+  // Let's assume standard D3 axis behavior is desired.
+
+  const group = select(axisRef.value)
+
   if (props.x) {
-    select(axisRef.value).call(axis() as any);
-    if (axisRef.value) {
-      xAxisPatterns({
-        node: axisRef.value as SVGGElement,
-        height: props.height!,
-      });
-    }
-    return;
+    group.call(axis() as any)
+    xAxisPatterns({
+      node: axisRef.value as SVGGElement,
+      height: props.height!,
+    })
+  } else if (props.y) {
+    const ticks = smartTicks(props.y!)
+    group.call(tickFn(ticks) as any)
+    yAxisPatterns({ node: axisRef.value as SVGGElement, width: props.width! })
   }
-  const ticks = smartTicks(props.y!);
-  select(axisRef.value).call(tickFn(ticks) as any);
-  if (axisRef.value) {
-    yAxisPatterns({ node: axisRef.value as SVGGElement, width: props.width! });
-  }
-});
+})
 </script>
 
 <template>

@@ -1,60 +1,49 @@
 <script setup lang="ts">
-import { generateTransition } from "@/utils";
-import type { ScaleLinear, ScaleTime } from "d3-scale";
-import { select } from "d3-selection";
-import { curveStep, line as lineFunc } from "d3-shape";
-import { computed, onMounted, ref } from "vue";
-import type { PropType } from "vue";
+import { constants } from '@/assets/constants';
+import { select } from 'd3-selection';
+import { transition } from 'd3-transition';
+import { computed, ref, watchEffect } from 'vue';
 
-type Datum = {
-  date: Date;
-  value: number;
-};
+const props = defineProps<{
+  pathD: string
+  gradientId?: string
+}>()
 
-const props = defineProps({
-  data: {
-    type: Array as PropType<Datum[]>,
-    required: true,
-  },
-  gradientId: String,
-  x: {
-    type: Function as PropType<ScaleTime<number, number, never>>,
-    required: true,
-  },
-  y: {
-    type: Function as PropType<ScaleLinear<number, number, never>>,
-    required: true,
-  },
-});
+const lineRef = ref<SVGGElement | null>(null)
+const stroke = computed(() => (props.gradientId ? `url(#${props.gradientId})` : 'steelblue'))
 
-const stroke = computed(() => (props.gradientId ? `url(#${props.gradientId})` : "steelblue"));
+watchEffect(() => {
+  if (!lineRef.value) return
 
-const line = computed(() =>
-  lineFunc<Datum>()
-    .x((d) => props.x(d.date))
-    .y((d) => props.y(d.value))
-    .curve(curveStep),
-);
+  const t = transition().duration(constants.duration.medium)
 
-const lineRef = ref(null);
+  select(lineRef.value)
+    .selectAll('path')
+    .data([props.pathD])
+    .join(
+      enter => {
+        const path = enter.append('path')
+          .attr('fill', 'none')
+          .attr('stroke', stroke.value)
+          .attr('stroke-width', 1.5)
+          .attr('d', d => d)
 
-onMounted(() => {
-  const path = select(lineRef.value)
-    .append("path")
-    .datum(props.data)
-    .attr("fill", "none")
-    .attr("stroke", stroke.value)
-    .attr("stroke-width", 1.5)
-    .attr("d", line.value as any);
+        // Get the total length for the stroke-dasharray animation
+        const totalLength = (path.node() as SVGPathElement)?.getTotalLength() ?? 0
 
-  const totalLength = path.node()!.getTotalLength();
-
-  path
-    .attr("stroke-dasharray", totalLength)
-    .attr("stroke-dashoffset", totalLength)
-    .transition(generateTransition({}))
-    .attr("stroke-dashoffset", 0);
-});
+        return path
+          .attr('stroke-dasharray', totalLength)
+          .attr('stroke-dashoffset', totalLength)
+          .call(enter => enter.transition(t)
+            .attr('stroke-dashoffset', 0))
+      },
+      update => update
+        .transition(t)
+        .attr('stroke', stroke.value)
+        .attr('d', d => d),
+      exit => exit.remove()
+    )
+})
 </script>
 
 <template>

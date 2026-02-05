@@ -5,16 +5,11 @@ import Gradient from "@/components/common-ts/LineGradient.vue";
 import Tooltip from "@/components/common-ts/Tooltip.vue";
 import Voronoi from "@/components/common-ts/Voronoi.vue";
 import Line from "@/components/LineChart/Line.vue";
-import { ascending, extent, max } from "d3-array";
+import { useLineChart, type LineChartDatum } from "@/composables/useLineChart";
+import { ascending } from "d3-array";
 import { csvParse } from "d3-dsv";
-import { scaleLinear, scaleUtc } from "d3-scale";
 import { timeParse } from "d3-time-format";
-import { computed, shallowRef, watch, ref } from "vue";
-
-type Datum = {
-  date: Date;
-  value: number;
-};
+import { computed, ref, shallowRef, watch } from "vue";
 
 const {
   data,
@@ -25,7 +20,7 @@ const {
   marginTop = 50,
   width = 960,
 } = defineProps<{
-  data: Datum[] | string;
+  data: LineChartDatum[] | string;
   height?: number;
   marginBottom?: number;
   marginLeft?: number;
@@ -37,16 +32,16 @@ const {
 const parseTime = timeParse("%Y-%m-%d");
 
 // Memoize CSV parsing: only re-run when `data` changes
-const parsed = shallowRef<Datum[]>([]);
+const parsed = shallowRef<LineChartDatum[]>([]);
 watch(
   () => data,
-  (str: Datum[] | string) => {
+  (str: LineChartDatum[] | string) => {
     if (typeof str === "string") {
       parsed.value = csvParse(str, (d: any) => {
         d.date = parseTime(d.date.toString())!;
         d.value = +d.value;
         return d;
-      }).sort((a: Datum, b: Datum) => ascending(a.date, b.date));
+      }).sort((a: LineChartDatum, b: LineChartDatum) => ascending(a.date, b.date));
     } else {
       parsed.value = str;
     }
@@ -58,51 +53,42 @@ const cdata = computed(() => parsed.value);
 const cwidth = computed(() => width - marginLeft - marginRight);
 const cheight = computed(() => height - marginTop - marginBottom);
 
-const x = computed(() =>
-  scaleUtc(extent(cdata.value, (d: Datum) => d.date) as [Date, Date], [0, cwidth.value]),
-);
+// Planner
+const chartProps = computed(() => ({
+  data: cdata.value,
+  width,
+  height,
+  marginTop,
+  marginBottom,
+  marginLeft,
+  marginRight
+}))
 
-const y = computed(() =>
-  scaleLinear([0, max(cdata.value, (d: Datum) => d.value) as number], [cheight.value, 0]),
-);
+const { pathD, xScale, yScale } = useLineChart(chartProps)
 
 // Initialize with a default datum to satisfy the type requirements
-const defaultDatum: Datum = {
+const defaultDatum: LineChartDatum = {
   date: new Date(),
   value: 0,
 };
 
-const moveTo = ref<{ d: Datum }>({ d: defaultDatum });
-const handleMoveTo = ({ d }: { d: Datum }) => {
+const moveTo = ref<{ d: LineChartDatum }>({ d: defaultDatum });
+const handleMoveTo = ({ d }: { d: LineChartDatum }) => {
   moveTo.value = { d };
 };
 
-const xAccessor = (d: Datum) => x.value(d.date);
+const xAccessor = (d: LineChartDatum) => xScale.value(d.date);
 </script>
 
 <template>
   <Chart :height="height" :marginLeft="marginLeft" :marginTop="marginTop" :width="width">
     <Tooltip :data="cdata" :height="cheight" :move-to="moveTo" :width="cwidth" />
-    <Axis :y="y" :width="cwidth" />
-    <Gradient
-      :domain="y.domain()"
-      :end="0.8"
-      :height="cheight"
-      :id="'line-gradient'"
-      :marginBottom="marginBottom"
-      :marginTop="marginTop"
-      :start="0"
-      :ticks="10"
-    />
-    <Line :data="cdata" :gradientId="'line-gradient'" :x="x" :y="y" />
-    <Axis :height="cheight" :width="cwidth" :x="x" />
-    <Voronoi
-      :classKey="'linechart'"
-      :data="cdata"
-      :height="cheight"
-      :width="cwidth"
-      :xAccessor="xAccessor"
-      @move-to="handleMoveTo"
-    />
+    <Axis :y="yScale" :width="cwidth" />
+    <Gradient :domain="yScale.domain()" :end="0.8" :height="cheight" :id="'line-gradient'" :marginBottom="marginBottom"
+      :marginTop="marginTop" :start="0" :ticks="10" />
+    <Line :pathD="pathD" :gradientId="'line-gradient'" />
+    <Axis :height="cheight" :width="cwidth" :x="xScale" />
+    <Voronoi :classKey="'linechart'" :data="cdata" :height="cheight" :width="cwidth" :xAccessor="xAccessor"
+      @move-to="handleMoveTo" />
   </Chart>
 </template>

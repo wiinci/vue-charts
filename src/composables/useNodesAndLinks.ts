@@ -1,5 +1,11 @@
-import { sankey, sankeyCenter, sankeyJustify, sankeyLeft, sankeyRight } from "d3-sankey";
-import { computed, ComputedRef, UnwrapRef, ref, watchEffect, watch } from "vue";
+import {
+    sankey,
+    sankeyCenter,
+    sankeyJustify,
+    sankeyLeft,
+    sankeyRight,
+} from "d3-sankey";
+import { computed, ComputedRef, ref, UnwrapRef, watch, watchEffect } from "vue";
 
 export interface SankeyNode {
   id: string;
@@ -10,11 +16,16 @@ export interface SankeyNode {
   value: number;
   index?: number;
   depth?: number;
-  height?: number;
+
   layer?: number;
   sourceLinks?: SankeyLink[];
   targetLinks?: SankeyLink[];
   [key: string]: any;
+  // Derived geometry for strict Planner contract
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface SankeyLink {
@@ -65,8 +76,12 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
   const align = computed(() => alignMap[props.nodeAlign]);
 
   // Compute chart dimensions
-  const chartHeight = computed(() => props.height - props.marginTop - props.marginBottom);
-  const chartWidth = computed(() => props.width - props.marginLeft - props.marginRight);
+  const chartHeight = computed(
+    () => props.height - props.marginTop - props.marginBottom,
+  );
+  const chartWidth = computed(
+    () => props.width - props.marginLeft - props.marginRight,
+  );
 
   // Create sankey generator ref with configuration (no side-effects in computed)
   const sankeyGenerator = ref(
@@ -77,7 +92,10 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
       .nodeWidth(props.nodeWidth)
       .extent([
         [props.marginLeft, props.marginTop],
-        [chartWidth.value + props.marginLeft, chartHeight.value + props.marginTop],
+        [
+          chartWidth.value + props.marginLeft,
+          chartHeight.value + props.marginTop,
+        ],
       ]),
   );
   watchEffect(() => {
@@ -88,7 +106,10 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
       .nodeWidth(props.nodeWidth)
       .extent([
         [props.marginLeft, props.marginTop],
-        [chartWidth.value + props.marginLeft, chartHeight.value + props.marginTop],
+        [
+          chartWidth.value + props.marginLeft,
+          chartHeight.value + props.marginTop,
+        ],
       ]);
     if (props.sort) {
       gen.nodeSort(() => 0);
@@ -102,10 +123,15 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
   // Helper to build node map and ensure default node properties
   function buildNodesAndLinks(): SankeyData {
     const nodeById = new Map<string, SankeyNode>();
-    const links = props.data.map((link) => ({ ...link, value: link.value || 1 }));
+    const links = props.data.map((link) => ({
+      ...link,
+      value: link.value || 1,
+    }));
     for (const link of links) {
-      const sourceId = typeof link.source === "string" ? link.source : link.source.id;
-      const targetId = typeof link.target === "string" ? link.target : link.target.id;
+      const sourceId =
+        typeof link.source === "string" ? link.source : link.source.id;
+      const targetId =
+        typeof link.target === "string" ? link.target : link.target.id;
       if (!nodeById.has(sourceId)) {
         nodeById.set(sourceId, {
           [props.nodeId]: sourceId,
@@ -142,7 +168,22 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
   );
 
   // Generate the sankey diagram
-  const sankeyData = computed(() => sankeyGenerator.value(processedData.value as SankeyData));
+  const sankeyData = computed(() => {
+    const { nodes, links } = sankeyGenerator.value(
+      processedData.value as SankeyData,
+    );
+    // 3. Plan Output: Enrich nodes with standard geometry
+    return {
+      nodes: nodes.map((node) => ({
+        ...node,
+        x: node.x0 ?? 0,
+        y: node.y0 ?? 0,
+        width: (node.x1 ?? 0) - (node.x0 ?? 0),
+        height: (node.y1 ?? 0) - (node.y0 ?? 0),
+      })),
+      links,
+    };
+  });
 
   // Return the processed data
   return {

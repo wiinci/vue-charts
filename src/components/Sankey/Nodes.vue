@@ -8,8 +8,6 @@ import { ref, watchEffect } from "vue";
 interface NodeProps {
   data: SankeyNode[]; // This will now be the already filtered nodes
   nodeId: string;
-  xAccessor: (d: SankeyNode) => number;
-  yAccessor: (d: SankeyNode) => number;
 }
 
 const props = defineProps<NodeProps>();
@@ -34,10 +32,10 @@ watchEffect(() => {
         enter
           .append("rect")
           .attr("fill", constants.nodeColor)
-          .attr("height", (d: any) => Math.max(0, d.y1 - d.y0))
-          .attr("width", (d: any) => d.x1 - d.x0)
-          .attr("x", (d: any) => props.xAccessor(d))
-          .attr("y", (d: any) => props.yAccessor(d))
+          .attr("height", (d: any) => d.height)
+          .attr("width", (d: any) => d.width)
+          .attr("x", (d: any) => d.x)
+          .attr("y", (d: any) => d.y)
           .attr("opacity", 0)
           .on("click", (_, d: any) => emit("click", d[props.nodeId]))
           .call((enter) =>
@@ -49,10 +47,10 @@ watchEffect(() => {
       (update) =>
         update
           .transition(tfast)
-          .attr("height", (d: any) => Math.max(0, d.y1 - d.y0))
-          .attr("width", (d: any) => d.x1 - d.x0)
-          .attr("x", (d: any) => props.xAccessor(d))
-          .attr("y", (d: any) => props.yAccessor(d))
+          .attr("height", (d: any) => d.height)
+          .attr("width", (d: any) => d.width)
+          .attr("x", (d: any) => d.x)
+          .attr("y", (d: any) => d.y)
           .attr("opacity", 1),
       (exit) => exit.transition(tfast).attr("opacity", 0).remove(),
     );

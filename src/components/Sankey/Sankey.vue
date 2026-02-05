@@ -56,8 +56,8 @@ provide("labelDatum", labelDatum);
 provide("labelId", labelId);
 
 // Accessors for node positions
-const xAccessor = computed(() => (d: SankeyNode) => d.x0);
-const yAccessor = computed(() => (d: SankeyNode) => d.y0);
+const xAccessor = computed(() => (d: SankeyNode) => d.x);
+const yAccessor = computed(() => (d: SankeyNode) => d.y);
 
 // Use collapsed composable
 const { collapsedNodes, filteredNodes, filteredLinks, toggleCollapse } = useCollapsed(
@@ -89,30 +89,11 @@ watchEffect((onCleanup) => {
 <template>
   <Chart :height="height" :marginLeft="0" :marginTop="0" :width="width">
     <Links :data="filteredLinks" :collapsedNodes="collapsedNodes" />
-    <Nodes
-      :data="filteredNodes"
-      :nodeId="nodeId"
-      :xAccessor="xAccessor"
-      :yAccessor="yAccessor"
-      :collapsedNodes="collapsedNodes"
-      @click="toggleCollapse"
-    />
-    <Labels
-      :data="filteredNodes"
-      :collapsedNodes="collapsedNodes"
-      :node-id="nodeId"
-      :node-width="nodeWidth"
-      :width="chartWidth"
-    />
-    <Voronoi
-      :classKey="'sankey'"
-      :data="filteredNodes as any"
-      :height="height"
-      :width="width"
-      :xAccessor="xAccessor as any"
-      :yAccessor="yAccessor as any"
-      @move-to="highlightLinks"
-      @node-click="handleNodeClick"
-    />
+    <Nodes :data="filteredNodes" :nodeId="nodeId" :collapsedNodes="collapsedNodes" @click="toggleCollapse" />
+    <Labels :data="filteredNodes" :collapsedNodes="collapsedNodes" :node-id="nodeId" :node-width="nodeWidth"
+      :width="chartWidth" />
+    <Voronoi :classKey="'sankey'" :data="filteredNodes as any" :height="height" :width="width"
+      :xAccessor="xAccessor as any" :yAccessor="yAccessor as any" @move-to="highlightLinks"
+      @node-click="handleNodeClick" />
   </Chart>
 </template>
