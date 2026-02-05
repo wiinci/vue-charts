@@ -28,27 +28,27 @@ function tickFn(ticks: any) {
 
 // X-axis & Y-axis reactivity
 watchEffect(() => {
-  if (!axisRef.value) return
+  if (!axisRef.value) return;
 
   // Select the group and clear previous content or let D3 axis handle updates?
   // D3 axis handles updates if we call it again.
   // But xAxisPatterns/yAxisPatterns might append things that need clearing?
   // Let's assume standard D3 axis behavior is desired.
 
-  const group = select(axisRef.value)
+  const group = select(axisRef.value);
 
   if (props.x) {
-    group.call(axis() as any)
+    group.call(axis() as any);
     xAxisPatterns({
       node: axisRef.value as SVGGElement,
       height: props.height!,
-    })
+    });
   } else if (props.y) {
-    const ticks = smartTicks(props.y!)
-    group.call(tickFn(ticks) as any)
-    yAxisPatterns({ node: axisRef.value as SVGGElement, width: props.width! })
+    const ticks = smartTicks(props.y!);
+    group.call(tickFn(ticks) as any);
+    yAxisPatterns({ node: axisRef.value as SVGGElement, width: props.width! });
   }
-})
+});
 </script>
 
 <template>

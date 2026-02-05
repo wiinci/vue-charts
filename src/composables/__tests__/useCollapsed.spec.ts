@@ -144,8 +144,7 @@ describe("useCollapsed", () => {
 
   describe("Complex Scenarios", () => {
     // Helper to extract ID safely since source/target can be string | SankeyNode
-    const getId = (n: SankeyNode | string) =>
-      typeof n === "string" ? n : n.id;
+    const getId = (n: SankeyNode | string) => (typeof n === "string" ? n : n.id);
 
     // Helper to quick link
     const link = (source: SankeyNode, target: SankeyNode) => {
@@ -166,13 +165,7 @@ describe("useCollapsed", () => {
       const m = createNode("M", 2);
       const n = createNode("N", 3);
 
-      const linksList = [
-        link(k, l),
-        link(k, o),
-        link(l, m),
-        link(o, m),
-        link(m, n),
-      ];
+      const linksList = [link(k, l), link(k, o), link(l, m), link(o, m), link(m, n)];
       const nodesList = [k, l, o, m, n];
 
       const { collapsedNodes, toggleCollapse, filteredLinks } = useCollapsed(
@@ -194,34 +187,24 @@ describe("useCollapsed", () => {
       const visibleLinks = filteredLinks.value;
       // K->L should be visible
       expect(
-        visibleLinks.some(
-          (link) => getId(link.source) === "K" && getId(link.target) === "L",
-        ),
+        visibleLinks.some((link) => getId(link.source) === "K" && getId(link.target) === "L"),
       ).toBe(true);
       // K->O should be visible
       expect(
-        visibleLinks.some(
-          (link) => getId(link.source) === "K" && getId(link.target) === "O",
-        ),
+        visibleLinks.some((link) => getId(link.source) === "K" && getId(link.target) === "O"),
       ).toBe(true);
       // O->M should be visible
       expect(
-        visibleLinks.some(
-          (link) => getId(link.source) === "O" && getId(link.target) === "M",
-        ),
+        visibleLinks.some((link) => getId(link.source) === "O" && getId(link.target) === "M"),
       ).toBe(true);
       // M->N should be visible
       expect(
-        visibleLinks.some(
-          (link) => getId(link.source) === "M" && getId(link.target) === "N",
-        ),
+        visibleLinks.some((link) => getId(link.source) === "M" && getId(link.target) === "N"),
       ).toBe(true);
 
       // L->M should be hidden
       expect(
-        visibleLinks.some(
-          (link) => getId(link.source) === "L" && getId(link.target) === "M",
-        ),
+        visibleLinks.some((link) => getId(link.source) === "L" && getId(link.target) === "M"),
       ).toBe(false);
 
       // Reset
@@ -237,26 +220,18 @@ describe("useCollapsed", () => {
 
       const visibleLinks2 = filteredLinks.value;
       expect(
-        visibleLinks2.some(
-          (link) => getId(link.source) === "K" && getId(link.target) === "L",
-        ),
+        visibleLinks2.some((link) => getId(link.source) === "K" && getId(link.target) === "L"),
       ).toBe(true);
       expect(
-        visibleLinks2.some(
-          (link) => getId(link.source) === "L" && getId(link.target) === "M",
-        ),
+        visibleLinks2.some((link) => getId(link.source) === "L" && getId(link.target) === "M"),
       ).toBe(true);
       expect(
-        visibleLinks2.some(
-          (link) => getId(link.source) === "M" && getId(link.target) === "N",
-        ),
+        visibleLinks2.some((link) => getId(link.source) === "M" && getId(link.target) === "N"),
       ).toBe(true);
 
       // O->M hidden
       expect(
-        visibleLinks2.some(
-          (link) => getId(link.source) === "O" && getId(link.target) === "M",
-        ),
+        visibleLinks2.some((link) => getId(link.source) === "O" && getId(link.target) === "M"),
       ).toBe(false);
 
       // Reset
@@ -278,34 +253,24 @@ describe("useCollapsed", () => {
       const visibleLinks3 = filteredLinks.value;
       // K->L visible
       expect(
-        visibleLinks3.some(
-          (link) => getId(link.source) === "K" && getId(link.target) === "L",
-        ),
+        visibleLinks3.some((link) => getId(link.source) === "K" && getId(link.target) === "L"),
       ).toBe(true);
       // K->O visible
       expect(
-        visibleLinks3.some(
-          (link) => getId(link.source) === "K" && getId(link.target) === "O",
-        ),
+        visibleLinks3.some((link) => getId(link.source) === "K" && getId(link.target) === "O"),
       ).toBe(true);
 
       // L->M hidden
       expect(
-        visibleLinks3.some(
-          (link) => getId(link.source) === "L" && getId(link.target) === "M",
-        ),
+        visibleLinks3.some((link) => getId(link.source) === "L" && getId(link.target) === "M"),
       ).toBe(false);
       // O->M hidden
       expect(
-        visibleLinks3.some(
-          (link) => getId(link.source) === "O" && getId(link.target) === "M",
-        ),
+        visibleLinks3.some((link) => getId(link.source) === "O" && getId(link.target) === "M"),
       ).toBe(false);
       // M->N hidden (descendant of collapsed)
       expect(
-        visibleLinks3.some(
-          (link) => getId(link.source) === "M" && getId(link.target) === "N",
-        ),
+        visibleLinks3.some((link) => getId(link.source) === "M" && getId(link.target) === "N"),
       ).toBe(false);
     });
 
@@ -337,20 +302,14 @@ describe("useCollapsed", () => {
       const visibleLinks = filteredLinks.value;
       // S->Q->R visible
       expect(
-        visibleLinks.some(
-          (link) => getId(link.source) === "S" && getId(link.target) === "Q",
-        ),
+        visibleLinks.some((link) => getId(link.source) === "S" && getId(link.target) === "Q"),
       ).toBe(true);
       expect(
-        visibleLinks.some(
-          (link) => getId(link.source) === "Q" && getId(link.target) === "R",
-        ),
+        visibleLinks.some((link) => getId(link.source) === "Q" && getId(link.target) === "R"),
       ).toBe(true);
       // P->Q hidden
       expect(
-        visibleLinks.some(
-          (link) => getId(link.source) === "P" && getId(link.target) === "Q",
-        ),
+        visibleLinks.some((link) => getId(link.source) === "P" && getId(link.target) === "Q"),
       ).toBe(false);
 
       // Reset
@@ -366,20 +325,14 @@ describe("useCollapsed", () => {
       const visibleLinks2 = filteredLinks.value;
       // P->Q->R visible
       expect(
-        visibleLinks2.some(
-          (link) => getId(link.source) === "P" && getId(link.target) === "Q",
-        ),
+        visibleLinks2.some((link) => getId(link.source) === "P" && getId(link.target) === "Q"),
       ).toBe(true);
       expect(
-        visibleLinks2.some(
-          (link) => getId(link.source) === "Q" && getId(link.target) === "R",
-        ),
+        visibleLinks2.some((link) => getId(link.source) === "Q" && getId(link.target) === "R"),
       ).toBe(true);
       // S->Q hidden
       expect(
-        visibleLinks2.some(
-          (link) => getId(link.source) === "S" && getId(link.target) === "Q",
-        ),
+        visibleLinks2.some((link) => getId(link.source) === "S" && getId(link.target) === "Q"),
       ).toBe(false);
 
       // Reset
@@ -397,21 +350,15 @@ describe("useCollapsed", () => {
       // P, S are visible (as roots/sources) but their outgoing links are hidden
       // P->Q hidden
       expect(
-        visibleLinks3.some(
-          (link) => getId(link.source) === "P" && getId(link.target) === "Q",
-        ),
+        visibleLinks3.some((link) => getId(link.source) === "P" && getId(link.target) === "Q"),
       ).toBe(false);
       // S->Q hidden
       expect(
-        visibleLinks3.some(
-          (link) => getId(link.source) === "S" && getId(link.target) === "Q",
-        ),
+        visibleLinks3.some((link) => getId(link.source) === "S" && getId(link.target) === "Q"),
       ).toBe(false);
       // Q->R hidden
       expect(
-        visibleLinks3.some(
-          (link) => getId(link.source) === "Q" && getId(link.target) === "R",
-        ),
+        visibleLinks3.some((link) => getId(link.source) === "Q" && getId(link.target) === "R"),
       ).toBe(false);
     });
   });

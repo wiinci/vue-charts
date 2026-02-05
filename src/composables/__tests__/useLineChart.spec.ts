@@ -18,8 +18,7 @@ describe("useLineChart", () => {
       marginRight: 10,
     });
 
-    const { xScale, yScale, pathD, innerWidth, innerHeight } =
-      useLineChart(props);
+    const { xScale, yScale, pathD, innerWidth, innerHeight } = useLineChart(props);
 
     expect(innerWidth.value).toBe(80);
     expect(innerHeight.value).toBe(80);

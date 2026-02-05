@@ -89,11 +89,28 @@ watchEffect((onCleanup) => {
 <template>
   <Chart :height="height" :marginLeft="0" :marginTop="0" :width="width">
     <Links :data="filteredLinks" :collapsedNodes="collapsedNodes" />
-    <Nodes :data="filteredNodes" :nodeId="nodeId" :collapsedNodes="collapsedNodes" @click="toggleCollapse" />
-    <Labels :data="filteredNodes" :collapsedNodes="collapsedNodes" :node-id="nodeId" :node-width="nodeWidth"
-      :width="chartWidth" />
-    <Voronoi :classKey="'sankey'" :data="filteredNodes as any" :height="height" :width="width"
-      :xAccessor="xAccessor as any" :yAccessor="yAccessor as any" @move-to="highlightLinks"
-      @node-click="handleNodeClick" />
+    <Nodes
+      :data="filteredNodes"
+      :nodeId="nodeId"
+      :collapsedNodes="collapsedNodes"
+      @click="toggleCollapse"
+    />
+    <Labels
+      :data="filteredNodes"
+      :collapsedNodes="collapsedNodes"
+      :node-id="nodeId"
+      :node-width="nodeWidth"
+      :width="chartWidth"
+    />
+    <Voronoi
+      :classKey="'sankey'"
+      :data="filteredNodes as any"
+      :height="height"
+      :width="width"
+      :xAccessor="xAccessor as any"
+      :yAccessor="yAccessor as any"
+      @move-to="highlightLinks"
+      @node-click="handleNodeClick"
+    />
   </Chart>
 </template>

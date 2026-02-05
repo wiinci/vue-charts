@@ -29,10 +29,7 @@ export function useCollapsed(
       return false;
     }
     return node.targetLinks.every((link) => {
-      const sourceId =
-        typeof link.source === "object"
-          ? link.source.id
-          : (link.source as string);
+      const sourceId = typeof link.source === "object" ? link.source.id : (link.source as string);
       return collapsedNodes.value.has(sourceId);
     });
   }
@@ -45,18 +42,12 @@ export function useCollapsed(
     if (!node || !node.sourceLinks) return;
 
     node.sourceLinks.forEach((link) => {
-      const targetId =
-        typeof link.target === "object"
-          ? link.target.id
-          : (link.target as string);
+      const targetId = typeof link.target === "object" ? link.target.id : (link.target as string);
       const targetNode = getNodeById(targetId);
 
       if (!targetNode) return;
 
-      if (
-        !allSourcesCollapsed(targetNode) &&
-        collapsedNodes.value.has(targetId)
-      ) {
+      if (!allSourcesCollapsed(targetNode) && collapsedNodes.value.has(targetId)) {
         collapsedNodes.value.delete(targetId);
         expandDownstream(targetId);
         return;
@@ -104,10 +95,7 @@ export function useCollapsed(
   /**
    * Find all source root nodes that lead to a given node
    */
-  function findNodeRootSources(
-    nodeId: string,
-    visited = new Set<string>(),
-  ): Set<string> {
+  function findNodeRootSources(nodeId: string, visited = new Set<string>()): Set<string> {
     visited.add(nodeId);
     const node = getNodeById(nodeId);
 
@@ -121,10 +109,7 @@ export function useCollapsed(
     // Otherwise, recursively find all root source nodes
     const roots = new Set<string>();
     node.targetLinks.forEach((link) => {
-      const sourceId =
-        typeof link.source === "object"
-          ? link.source.id
-          : (link.source as string);
+      const sourceId = typeof link.source === "object" ? link.source.id : (link.source as string);
 
       if (!visited.has(sourceId)) {
         findNodeRootSources(sourceId, visited).forEach((r) => roots.add(r));
@@ -138,11 +123,7 @@ export function useCollapsed(
    * Toggle the collapsed state of a node
    */
   // Helper: decide if a downstream node should be collapsed when a parent collapses
-  function shouldCollapseDescendant(
-    parentId: string,
-    dId: string,
-    isRootSource: boolean,
-  ): boolean {
+  function shouldCollapseDescendant(parentId: string, dId: string, isRootSource: boolean): boolean {
     const downstreamNode = getNodeById(dId);
     if (!downstreamNode) return false;
 
@@ -152,8 +133,7 @@ export function useCollapsed(
     }
 
     const immediateSourcesCollapsed = incomingLinks.every((link) => {
-      const srcId =
-        typeof link.source === "object" ? link.source.id : link.source;
+      const srcId = typeof link.source === "object" ? link.source.id : link.source;
       return srcId === parentId || collapsedNodes.value.has(srcId);
     });
 
@@ -184,8 +164,7 @@ export function useCollapsed(
     collapsedNodes.value.add(id);
     const current = getNodeById(id);
     if (!current) return;
-    const isRootSource =
-      !current.targetLinks || current.targetLinks.length === 0;
+    const isRootSource = !current.targetLinks || current.targetLinks.length === 0;
     const downstream = collectDownstream(id);
     downstream.delete(id);
 
@@ -249,21 +228,12 @@ export function useCollapsed(
    */
   const filteredLinks = computed((): SankeyLink[] =>
     links.value.filter((link) => {
-      const sourceId =
-        typeof link.source === "object"
-          ? link.source.id
-          : (link.source as string);
-      const targetId =
-        typeof link.target === "object"
-          ? link.target.id
-          : (link.target as string);
+      const sourceId = typeof link.source === "object" ? link.source.id : (link.source as string);
+      const targetId = typeof link.target === "object" ? link.target.id : (link.target as string);
       // Hide links outgoing from collapsed nodes
       if (collapsedNodes.value.has(sourceId)) return false;
       // Hide links involving any collapsed descendants
-      if (
-        collapsedDescendants.value.has(sourceId) ||
-        collapsedDescendants.value.has(targetId)
-      )
+      if (collapsedDescendants.value.has(sourceId) || collapsedDescendants.value.has(targetId))
         return false;
       return true;
     }),

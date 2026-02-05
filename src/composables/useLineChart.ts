@@ -20,14 +20,12 @@ export interface LineChartProps {
 
 export function useLineChart(props: Ref<LineChartProps>) {
   const innerWidth = computed(() => {
-    const w =
-      props.value.width - props.value.marginLeft - props.value.marginRight;
+    const w = props.value.width - props.value.marginLeft - props.value.marginRight;
     return Math.max(0, w);
   });
 
   const innerHeight = computed(() => {
-    const h =
-      props.value.height - props.value.marginTop - props.value.marginBottom;
+    const h = props.value.height - props.value.marginTop - props.value.marginBottom;
     return Math.max(0, h);
   });
 

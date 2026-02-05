@@ -1,10 +1,4 @@
-import {
-    sankey,
-    sankeyCenter,
-    sankeyJustify,
-    sankeyLeft,
-    sankeyRight,
-} from "d3-sankey";
+import { sankey, sankeyCenter, sankeyJustify, sankeyLeft, sankeyRight } from "d3-sankey";
 import { computed, ComputedRef, ref, UnwrapRef, watch, watchEffect } from "vue";
 
 export interface SankeyNode {
@@ -76,12 +70,8 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
   const align = computed(() => alignMap[props.nodeAlign]);
 
   // Compute chart dimensions
-  const chartHeight = computed(
-    () => props.height - props.marginTop - props.marginBottom,
-  );
-  const chartWidth = computed(
-    () => props.width - props.marginLeft - props.marginRight,
-  );
+  const chartHeight = computed(() => props.height - props.marginTop - props.marginBottom);
+  const chartWidth = computed(() => props.width - props.marginLeft - props.marginRight);
 
   // Create sankey generator ref with configuration (no side-effects in computed)
   const sankeyGenerator = ref(
@@ -92,10 +82,7 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
       .nodeWidth(props.nodeWidth)
       .extent([
         [props.marginLeft, props.marginTop],
-        [
-          chartWidth.value + props.marginLeft,
-          chartHeight.value + props.marginTop,
-        ],
+        [chartWidth.value + props.marginLeft, chartHeight.value + props.marginTop],
       ]),
   );
   watchEffect(() => {
@@ -106,10 +93,7 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
       .nodeWidth(props.nodeWidth)
       .extent([
         [props.marginLeft, props.marginTop],
-        [
-          chartWidth.value + props.marginLeft,
-          chartHeight.value + props.marginTop,
-        ],
+        [chartWidth.value + props.marginLeft, chartHeight.value + props.marginTop],
       ]);
     if (props.sort) {
       gen.nodeSort(() => 0);
@@ -128,10 +112,8 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
       value: link.value || 1,
     }));
     for (const link of links) {
-      const sourceId =
-        typeof link.source === "string" ? link.source : link.source.id;
-      const targetId =
-        typeof link.target === "string" ? link.target : link.target.id;
+      const sourceId = typeof link.source === "string" ? link.source : link.source.id;
+      const targetId = typeof link.target === "string" ? link.target : link.target.id;
       if (!nodeById.has(sourceId)) {
         nodeById.set(sourceId, {
           [props.nodeId]: sourceId,
@@ -169,9 +151,7 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 
   // Generate the sankey diagram
   const sankeyData = computed(() => {
-    const { nodes, links } = sankeyGenerator.value(
-      processedData.value as SankeyData,
-    );
+    const { nodes, links } = sankeyGenerator.value(processedData.value as SankeyData);
     // 3. Plan Output: Enrich nodes with standard geometry
     return {
       nodes: nodes.map((node) => ({

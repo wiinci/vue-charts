@@ -61,10 +61,10 @@ const chartProps = computed(() => ({
   marginTop,
   marginBottom,
   marginLeft,
-  marginRight
-}))
+  marginRight,
+}));
 
-const { pathD, xScale, yScale } = useLineChart(chartProps)
+const { pathD, xScale, yScale } = useLineChart(chartProps);
 
 // Initialize with a default datum to satisfy the type requirements
 const defaultDatum: LineChartDatum = {
@@ -84,11 +84,25 @@ const xAccessor = (d: LineChartDatum) => xScale.value(d.date);
   <Chart :height="height" :marginLeft="marginLeft" :marginTop="marginTop" :width="width">
     <Tooltip :data="cdata" :height="cheight" :move-to="moveTo" :width="cwidth" />
     <Axis :y="yScale" :width="cwidth" />
-    <Gradient :domain="yScale.domain()" :end="0.8" :height="cheight" :id="'line-gradient'" :marginBottom="marginBottom"
-      :marginTop="marginTop" :start="0" :ticks="10" />
+    <Gradient
+      :domain="yScale.domain()"
+      :end="0.8"
+      :height="cheight"
+      :id="'line-gradient'"
+      :marginBottom="marginBottom"
+      :marginTop="marginTop"
+      :start="0"
+      :ticks="10"
+    />
     <Line :pathD="pathD" :gradientId="'line-gradient'" />
     <Axis :height="cheight" :width="cwidth" :x="xScale" />
-    <Voronoi :classKey="'linechart'" :data="cdata" :height="cheight" :width="cwidth" :xAccessor="xAccessor"
-      @move-to="handleMoveTo" />
+    <Voronoi
+      :classKey="'linechart'"
+      :data="cdata"
+      :height="cheight"
+      :width="cwidth"
+      :xAccessor="xAccessor"
+      @move-to="handleMoveTo"
+    />
   </Chart>
 </template>
