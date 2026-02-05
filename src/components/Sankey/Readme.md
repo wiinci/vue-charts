@@ -10,20 +10,20 @@ This example explores the possibility of using a Sankey diagram for a data linea
 
 ## Props
 
-|Name|Description|Type|Required|Default value|Allowed value(s)|
-|--|--|--|--|--|--|
-|`data`|JSON array of objects containing the `source`, `target` and one of `id` or `name` properties|Object[]|✅|||
-|`height`|Chart height, px|Number||480||
-|`marginBottom`|Bottom chart offset, px|Number||20||
-|`marginLeft`|Left chart offset, px|Number||20||
-|`marginRight`|Right chart offset, px|Number||20||
-|`marginTop`|Top chart offset, px|Number||20||
-|`nodeAlign`|Left-align or justify-align the Sankey nodes|String||`left`|`justify`|
-|`nodeId`|Unique identifier for Sankey nodes. Defined in the JSON data|String||`id`||
-|`nodePadding`|Vertical distance between Sankey nodes|Number||10||
-|`nodeWidth`|Rectangular node width|Number||10||
-|`sort`|Sort node order in the vertical direction|Boolean||`false`||
-|`width`|Chart width, px|Number||960||
+| Name           | Description                                                                                  | Type     | Required | Default value | Allowed value(s) |
+| -------------- | -------------------------------------------------------------------------------------------- | -------- | -------- | ------------- | ---------------- |
+| `data`         | JSON array of objects containing the `source`, `target` and one of `id` or `name` properties | Object[] | ✅       |               |                  |
+| `height`       | Chart height, px                                                                             | Number   |          | 480           |                  |
+| `marginBottom` | Bottom chart offset, px                                                                      | Number   |          | 20            |                  |
+| `marginLeft`   | Left chart offset, px                                                                        | Number   |          | 20            |                  |
+| `marginRight`  | Right chart offset, px                                                                       | Number   |          | 20            |                  |
+| `marginTop`    | Top chart offset, px                                                                         | Number   |          | 20            |                  |
+| `nodeAlign`    | Left-align or justify-align the Sankey nodes                                                 | String   |          | `left`        | `justify`        |
+| `nodeId`       | Unique identifier for Sankey nodes. Defined in the JSON data                                 | String   |          | `id`          |                  |
+| `nodePadding`  | Vertical distance between Sankey nodes                                                       | Number   |          | 10            |                  |
+| `nodeWidth`    | Rectangular node width                                                                       | Number   |          | 10            |                  |
+| `sort`         | Sort node order in the vertical direction                                                    | Boolean  |          | `false`       |                  |
+| `width`        | Chart width, px                                                                              | Number   |          | 960           |                  |
 
 ## Demo
 
@@ -39,4 +39,3 @@ This example explores the possibility of using a Sankey diagram for a data linea
 
 - [ ] Honor reduced motion settings
 - [ ] Collapsible nodes
-

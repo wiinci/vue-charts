@@ -36,15 +36,11 @@ accessibility, performance, security, and scaling.
 
 ```vue
 <!-- Incorrect -->
-<div
-	v-for="item in items"
-	v-if="item.isVisible"
-	:key="item.id"
->{{ item.text }}</div>
+<div v-for="item in items" v-if="item.isVisible" :key="item.id">{{ item.text }}</div>
 
 <!-- Correct -->
 <template v-for="item in items" :key="item.id">
-	<div v-if="item.isVisible">{{ item.text }}</div>
+  <div v-if="item.isVisible">{{ item.text }}</div>
 </template>
 ```
 
@@ -70,13 +66,7 @@ accessibility, performance, security, and scaling.
   attributes)
 
 ```vue
-<component
-	v-if="condition"
-	v-model="data"
-	:prop="value"
-	@event="handler"
-	class="my-class"
-/>
+<component v-if="condition" v-model="data" :prop="value" @event="handler" class="my-class" />
 ```
 
 - Use shorthand syntax for directives when possible (:, @, #)
@@ -94,14 +84,14 @@ accessibility, performance, security, and scaling.
 
 ```vue
 <script setup>
-	import {ref, computed} from 'vue'
+import { ref, computed } from "vue";
 
-	const count = ref(0)
-	const doubleCount = computed(() => count.value * 2)
+const count = ref(0);
+const doubleCount = computed(() => count.value * 2);
 
-	function increment() {
-		count.value++
-	}
+function increment() {
+  count.value++;
+}
 </script>
 ```
 
@@ -109,13 +99,13 @@ accessibility, performance, security, and scaling.
 
 ```vue
 <script setup>
-	const props = defineProps({
-		status: {
-			type: String,
-			required: true,
-			validator: value => ['active', 'inactive'].includes(value),
-		},
-	})
+const props = defineProps({
+  status: {
+    type: String,
+    required: true,
+    validator: (value) => ["active", "inactive"].includes(value),
+  },
+});
 </script>
 ```
 
@@ -123,11 +113,11 @@ accessibility, performance, security, and scaling.
 
 ```vue
 <script setup>
-	const emit = defineEmits(['update', 'delete'])
+const emit = defineEmits(["update", "delete"]);
 
-	function updateItem() {
-		emit('update', {id: 1})
-	}
+function updateItem() {
+  emit("update", { id: 1 });
+}
 </script>
 ```
 
@@ -135,15 +125,15 @@ accessibility, performance, security, and scaling.
 
 ```vue
 <script setup lang="ts">
-	import {ref} from 'vue'
+import { ref } from "vue";
 
-	interface User {
-		id: number
-		name: string
-		email: string
-	}
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
 
-	const user = ref<User | null>(null)
+const user = ref<User | null>(null);
 </script>
 ```
 
@@ -155,10 +145,10 @@ accessibility, performance, security, and scaling.
 
 ```vue
 <script setup>
-	import {reactive, toRefs} from 'vue'
+import { reactive, toRefs } from "vue";
 
-	const state = reactive({count: 0, name: 'Vue'})
-	const {count, name} = toRefs(state)
+const state = reactive({ count: 0, name: "Vue" });
+const { count, name } = toRefs(state);
 </script>
 ```
 
@@ -173,8 +163,8 @@ const fullName = computed(() => `${firstName.value} ${lastName.value}`)
 - Use watchers for side effects
 
 ```vue
-watch(searchQuery, async (newValue) => { if (newValue.length > 2) { await
-fetchResults(newValue) } }, { debounce: 300 })
+watch(searchQuery, async (newValue) => { if (newValue.length > 2) { await fetchResults(newValue) }
+}, { debounce: 300 })
 ```
 
 ## State Management
@@ -186,17 +176,17 @@ fetchResults(newValue) } }, { debounce: 300 })
 ```vue
 <!-- Parent component -->
 <script setup>
-	import {provide, ref} from 'vue'
+import { provide, ref } from "vue";
 
-	const theme = ref('light')
-	provide('theme', theme)
+const theme = ref("light");
+provide("theme", theme);
 </script>
 
 <!-- Child component -->
 <script setup>
-	import {inject} from 'vue'
+import { inject } from "vue";
 
-	const theme = inject('theme')
+const theme = inject("theme");
 </script>
 ```
 
@@ -204,19 +194,19 @@ fetchResults(newValue) } }, { debounce: 300 })
 
 ```js
 // useCounter.js
-import {ref} from 'vue'
+import { ref } from "vue";
 
 export function useCounter() {
-	const count = ref(0)
+  const count = ref(0);
 
-	function increment() {
-		count.value++
-	}
+  function increment() {
+    count.value++;
+  }
 
-	return {
-		count,
-		increment,
-	}
+  return {
+    count,
+    increment,
+  };
 }
 ```
 
@@ -226,24 +216,24 @@ export function useCounter() {
 
 ```js
 // store/users.js
-import {defineStore} from 'pinia'
+import { defineStore } from "pinia";
 
-export const useUsersStore = defineStore('users', {
-	state: () => ({
-		users: [],
-		loading: false,
-	}),
-	actions: {
-		async fetchUsers() {
-			this.loading = true
-			try {
-				this.users = await api.getUsers()
-			} finally {
-				this.loading = false
-			}
-		},
-	},
-})
+export const useUsersStore = defineStore("users", {
+  state: () => ({
+    users: [],
+    loading: false,
+  }),
+  actions: {
+    async fetchUsers() {
+      this.loading = true;
+      try {
+        this.users = await api.getUsers();
+      } finally {
+        this.loading = false;
+      }
+    },
+  },
+});
 ```
 
 - Organize stores by feature and keep them focused
@@ -281,7 +271,7 @@ export const useUsersStore = defineStore('users', {
 - Use dynamic imports for route-level components
 
 ```js
-const UserProfile = () => import('./UserProfile.vue')
+const UserProfile = () => import("./UserProfile.vue");
 ```
 
 - Implement virtual scrolling for long lists using libraries like
@@ -338,10 +328,10 @@ const UserProfile = () => import('./UserProfile.vue')
 <div>{{ sanitizedHtml }}</div>
 
 <script setup>
-	import {computed} from 'vue'
-	import DOMPurify from 'dompurify'
+import { computed } from "vue";
+import DOMPurify from "dompurify";
 
-	const sanitizedHtml = computed(() => DOMPurify.sanitize(props.userContent))
+const sanitizedHtml = computed(() => DOMPurify.sanitize(props.userContent));
 </script>
 ```
 
@@ -352,8 +342,8 @@ const UserProfile = () => import('./UserProfile.vue')
 ```js
 // Check if URL is safe before using
 function isSafeURL(url) {
-	const pattern = /^(https?:\/\/|mailto:|tel:)/i
-	return pattern.test(url)
+  const pattern = /^(https?:\/\/|mailto:|tel:)/i;
+  return pattern.test(url);
 }
 ```
 
@@ -363,12 +353,7 @@ function isSafeURL(url) {
 - Use appropriate input types and validation attributes
 
 ```vue
-<input
-	type="email"
-	required
-	pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
-	v-model="email"
-/>
+<input type="email" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" v-model="email" />
 ```
 
 ### Data Handling
@@ -385,14 +370,14 @@ function isSafeURL(url) {
 - Create simple, focused test cases
 
 ```js
-import {mount} from '@vue/test-utils'
-import Counter from './Counter.vue'
+import { mount } from "@vue/test-utils";
+import Counter from "./Counter.vue";
 
-test('increments count when button is clicked', async () => {
-	const wrapper = mount(Counter)
-	await wrapper.find('button').trigger('click')
-	expect(wrapper.text()).toContain('Count: 1')
-})
+test("increments count when button is clicked", async () => {
+  const wrapper = mount(Counter);
+  await wrapper.find("button").trigger("click");
+  expect(wrapper.text()).toContain("Count: 1");
+});
 ```
 
 ### Unit Testing
