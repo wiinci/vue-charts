@@ -35,13 +35,10 @@ const { shouldHighlight, processHoveredNode } = useHighlightLinks(
 	computed(() => props.collapsedNodes),
 )
 
-// Use data directly; filtering by collapse done in parent
-const filteredData = computed(() => props.data)
-
 watchEffect(() => {
-	if (!nodeRef.value) return
+  if (!nodeRef.value) return
 
-	const data = filteredData.value
+  const data = props.data
 	if (labelHoverDatum.value && typeof labelHoverDatum.value.id !== 'undefined') {
 		processHoveredNode(labelHoverDatum.value)
 	}

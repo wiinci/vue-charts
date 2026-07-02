@@ -1,5 +1,5 @@
 import { sankey, sankeyCenter, sankeyJustify, sankeyLeft, sankeyRight } from 'd3-sankey'
-import { computed, ComputedRef, ref, UnwrapRef, watch, watchEffect } from 'vue'
+import { computed, ComputedRef, ref, UnwrapRef } from 'vue'
 
 export interface SankeyNode {
 	id: string
@@ -55,8 +55,8 @@ interface SankeyData {
 export interface SankeyResult {
 	chartHeight: ComputedRef<number>
 	chartWidth: ComputedRef<number>
-	nodes: SankeyNode[]
-	links: SankeyLink[]
+	nodes: ComputedRef<SankeyNode[]>
+	links: ComputedRef<SankeyLink[]>
 }
 
 export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
@@ -73,19 +73,8 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 	const chartHeight = computed(() => props.height - props.marginTop - props.marginBottom)
 	const chartWidth = computed(() => props.width - props.marginLeft - props.marginRight)
 
-	// Create sankey generator ref with configuration (no side-effects in computed)
-	const sankeyGenerator = ref(
-		sankey()
-			.nodeAlign(align.value)
-			.nodeId((d: any) => (d as any)[props.nodeId])
-			.nodePadding(props.nodePadding)
-			.nodeWidth(props.nodeWidth)
-			.extent([
-				[props.marginLeft, props.marginTop],
-				[chartWidth.value + props.marginLeft, chartHeight.value + props.marginTop],
-			]),
-	)
-	watchEffect(() => {
+	// Create sankey generator as a computed so it rebuilds when any config prop changes
+	const sankeyGenerator = computed(() => {
 		const gen = sankey()
 			.nodeAlign(align.value)
 			.nodeId((d: any) => (d as any)[props.nodeId])
@@ -98,14 +87,11 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 		if (props.sort) {
 			gen.nodeSort(() => 0)
 		}
-		sankeyGenerator.value = gen
+		return gen
 	})
 
-	// Process data to ensure all nodes have a value (moved from computed to ref+watchEffect)
-	const processedData = ref<SankeyData>({ nodes: [], links: [] })
-
-	// Helper to build node map and ensure default node properties
-	function buildNodesAndLinks(): SankeyData {
+	// Build node map from link data as a computed — synchronously reactive to props.data changes
+	const processedData = computed<SankeyData>(() => {
 		const nodeById = new Map<string, SankeyNode>()
 		const links = props.data.map((link) => ({
 			...link,
@@ -138,16 +124,7 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 			}
 		}
 		return { nodes: Array.from(nodeById.values()), links }
-	}
-
-	// Recompute nodes/links only when the input data array changes reference
-	watch(
-		() => props.data,
-		() => {
-			processedData.value = buildNodesAndLinks()
-		},
-		{ immediate: true },
-	)
+	})
 
 	// Generate the sankey diagram
 	const sankeyData = computed(() => {
@@ -169,7 +146,7 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 	return {
 		chartHeight,
 		chartWidth,
-		nodes: sankeyData.value.nodes,
-		links: sankeyData.value.links,
-	} as SankeyResult
+		nodes: computed(() => sankeyData.value.nodes),
+		links: computed(() => sankeyData.value.links),
+	}
 }

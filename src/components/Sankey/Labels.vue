@@ -27,18 +27,15 @@ const getXPosition = computed(() => (d: SankeyNode) => {
 
 const getYPosition = computed(() => (d: SankeyNode) => (d.y1 + d.y0) / 2)
 
-// Use visible data directly; filtering done in parent
-const filteredData = computed((): SankeyNode[] => props.data)
-
 watchEffect(() => {
-	if (!nodeRef.value) return
+  if (!nodeRef.value) return
 
-	// Create a fresh transition for each effect run
-	const tfast = transition().duration(constants.duration.fast)
+  // Create a fresh transition for each effect run
+  const tfast = transition().duration(constants.duration.fast)
 
-	select(nodeRef.value)
-		.selectAll('text')
-		.data(filteredData.value, (d: any) => d[props.nodeId])
+  select(nodeRef.value)
+    .selectAll('text')
+    .data(props.data, (d: any) => d[props.nodeId])
 		.join(
 			(enter) =>
 				enter
