@@ -1,26 +1,40 @@
 <script setup lang="ts">
 import { Delaunay as delaunay } from 'd3-delaunay'
 import { pointer, select } from 'd3-selection'
-import { computed, onUnmounted, ref, watchEffect } from 'vue'
+import { computed, onUnmounted, type PropType, ref, watchEffect } from 'vue'
 
 interface Datum {
 	id?: string
 	date?: Date
 	value?: number
-	[key: string]: unknown
 }
 
-const props = defineProps<{
-	classKey: string
-	data: Datum[]
-	height: number
-	width: number
-	xAccessor: (d: Datum) => number
-	yAccessor?: (d: Datum) => number
-}>()
+const props = defineProps({
+	classKey: {
+		type: String,
+		required: true,
+	},
+	data: {
+		type: Array as PropType<Datum[]>,
+		required: true,
+	},
+	height: {
+		type: Number,
+		required: true,
+	},
+	width: {
+		type: Number,
+		required: true,
+	},
+	xAccessor: {
+		type: Function as PropType<(d: any) => number>,
+		required: true,
+	},
+	yAccessor: Function as PropType<(d: any) => number>,
+})
 
 const emit = defineEmits<{
-	'move-to': [{ d: Datum }]
+	'move-to': [{ d: any }]
 	'node-click': [{ id: string }]
 }>()
 

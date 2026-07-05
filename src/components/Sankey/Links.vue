@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { constants } from '@/assets/constants'
 import { useHighlightLinks } from '@/composables/useHighlightLinks'
-import { SankeyLink } from '@/composables/useNodesAndLinks'
+import {
+	SankeyLink,
+	SankeyNode,
+} from '@/composables/useNodesAndLinks'
+import {
+	SankeyLinkDatum,
+	SankeyNodeDatum,
+} from '@/composables/sankeyModel'
+import { getLinkSourceId, getLinkTargetId } from '@/composables/sankeyTraversal'
 import { sankeyLinkHorizontal } from 'd3-sankey'
 import { select } from 'd3-selection'
 import { linkHorizontal } from 'd3-shape'
@@ -15,18 +23,29 @@ const props = defineProps<{
 
 const nodeRef = ref<SVGGElement | null>(null)
 
+const getRenderedSource = (link: SankeyLink): SankeyNode => link.source as SankeyNode
+const getLinkDepth = (link: SankeyLink): number => getRenderedSource(link).depth || 0
+const getLinkKey = (link: SankeyLink): string => `${getLinkSourceId(link)}-${getLinkTargetId(link)}`
+const getBaseStrokeWidth = (link: SankeyLink): number => Math.max(1, link.width ?? 0)
+
 // Pre-compute link accessors for better performance
-const initialGenerator = linkHorizontal()
-	.source((d: any) => [d.source.x0, d.source.y0])
-	.target((d: any) => [d.source.x0, d.source.y0])
+const initialGenerator = linkHorizontal<SankeyLink, [number, number]>()
+	.source((link) => {
+		const source = getRenderedSource(link)
+		return [source.x0 ?? 0, source.y0 ?? 0]
+	})
+	.target((link) => {
+		const source = getRenderedSource(link)
+		return [source.x0 ?? 0, source.y0 ?? 0]
+	})
 // Accessor to generate SVG path string
-const initialLinkAccessor = (d: any) => initialGenerator(d) || ''
+const initialLinkAccessor = (link: SankeyLink) => initialGenerator(link) || ''
 
 // Create an adapter function for sankeyLinkHorizontal generator
-const finalGenerator = sankeyLinkHorizontal()
-const finalLinkAccessor = (d: any) => finalGenerator(d)
+const finalGenerator = sankeyLinkHorizontal<SankeyNodeDatum, SankeyLinkDatum>()
+const finalLinkAccessor = (link: SankeyLink) => finalGenerator(link) || ''
 
-const labelHoverDatum = inject<Ref<any>>('labelDatum', ref({}))
+const labelHoverDatum = inject<Ref<SankeyNode | null>>('labelDatum', ref(null))
 const labelHoverId = inject<Ref<string>>('labelId', ref(''))
 const animationsEnabled = inject<Ref<boolean>>('animationsEnabled', ref(true))
 
@@ -42,7 +61,7 @@ watch(
 	[() => labelHoverId.value, collapsedKey],
 	() => {
 		const hoveredNode = labelHoverDatum.value
-		if (hoveredNode && typeof hoveredNode.id !== 'undefined') {
+		if (hoveredNode?.id) {
 			processHoveredNode(hoveredNode)
 			return
 		}
@@ -53,57 +72,58 @@ watch(
 )
 
 watchEffect(() => {
-  if (!nodeRef.value) return
+	if (!nodeRef.value) return
 
-  const data = props.data
+	const data = props.data
 	const isAnimated = animationsEnabled.value
 	const tfast = transition().duration(constants.duration.fast)
+	const maxDepth = Math.max(0, ...data.map(getLinkDepth))
 
 	select(nodeRef.value)
-		.selectAll('path')
-		.data(data, (d: any) => `${d.source.id}-${d.target.id}`)
+		.selectAll<SVGPathElement, SankeyLink>('path')
+		.data(data, getLinkKey)
 		.join(
 			(enter) =>
 				enter
 					.append('path')
 					.attr('fill', 'none')
-					.attr('stroke', (d: any) =>
-						shouldHighlight(d, {
+					.attr('stroke', (link) =>
+						shouldHighlight(link, {
 							trueValue: constants.linkColorHighlight,
 							falseValue: constants.linkColor,
 						}),
 					)
-					.attr('stroke-width', (d: any) => Math.max(1, d.width))
-					.call((enter) => {
+					.attr('stroke-width', getBaseStrokeWidth)
+					.call((selection) => {
 						if (!isAnimated) {
-							enter.attr('d', finalLinkAccessor)
+							selection.attr('d', finalLinkAccessor)
 							return
 						}
 
-						enter
+						selection
 							.attr('d', initialLinkAccessor)
 							.transition(tfast)
-							.delay((d: any) => constants.duration.fast * ((d.source.depth || 0) + 1))
+							.delay((link) => constants.duration.fast * (getLinkDepth(link) + 1))
 							.attr('d', finalLinkAccessor)
 					}),
 			(update) => {
 				const base = update
 					.classed(
 						'raise',
-						(d: any) =>
-							shouldHighlight(d, {
+						(link) =>
+							shouldHighlight(link, {
 								trueValue: true,
 								falseValue: false,
-							}) as boolean,
+							}),
 					)
-					.attr('stroke', (d: any) =>
-						shouldHighlight(d, {
+					.attr('stroke', (link) =>
+						shouldHighlight(link, {
 							trueValue: constants.linkColorHighlight,
 							falseValue: constants.linkColor,
 						}),
 					)
-					.attr('stroke-width', (d: any) =>
-						shouldHighlight(d, {
+					.attr('stroke-width', (link) =>
+						shouldHighlight(link, {
 							trueValue: 1.2,
 							falseValue: 1,
 						}),
@@ -123,10 +143,7 @@ watchEffect(() => {
 
 				exit
 					.transition(tfast)
-					.delay((d: any) => {
-						const maxDepth = Math.max(...data.map((link: any) => link.source.depth || 0))
-						return constants.duration.fast * (maxDepth - (d.source.depth || 0))
-					})
+					.delay((link) => constants.duration.fast * (maxDepth - getLinkDepth(link)))
 					.attr('d', initialLinkAccessor)
 					.remove()
 			},
