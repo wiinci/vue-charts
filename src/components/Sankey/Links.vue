@@ -10,6 +10,7 @@ import {
 	SankeyNodeDatum,
 } from '@/composables/sankeyModel'
 import { getLinkSourceId, getLinkTargetId } from '@/composables/sankeyTraversal'
+import { optimizeSvgPath } from '@/utils'
 import { sankeyLinkHorizontal } from 'd3-sankey'
 import { select } from 'd3-selection'
 import { linkHorizontal } from 'd3-shape'
@@ -39,11 +40,11 @@ const initialGenerator = linkHorizontal<SankeyLink, [number, number]>()
 		return [source.x0 ?? 0, source.y0 ?? 0]
 	})
 // Accessor to generate SVG path string
-const initialLinkAccessor = (link: SankeyLink) => initialGenerator(link) || ''
+const initialLinkAccessor = (link: SankeyLink) => optimizeSvgPath(initialGenerator(link) || '')
 
 // Create an adapter function for sankeyLinkHorizontal generator
 const finalGenerator = sankeyLinkHorizontal<SankeyNodeDatum, SankeyLinkDatum>()
-const finalLinkAccessor = (link: SankeyLink) => finalGenerator(link) || ''
+const finalLinkAccessor = (link: SankeyLink) => optimizeSvgPath(finalGenerator(link) || '')
 
 const labelHoverDatum = inject<Ref<SankeyNode | null>>('labelDatum', ref(null))
 const labelHoverId = inject<Ref<string>>('labelId', ref(''))
