@@ -74,8 +74,11 @@ const handleNodeClick = ({ id }: { id: string }) => toggleCollapse(id)
  * Update highlight state based on hovered node
  */
 function highlightLinks({ d }: { d: SankeyNode | any }) {
-	labelId.value = d && typeof d === 'object' ? d.id : ''
-	labelDatum.value = d && typeof d === 'object' ? d : {}
+	const nextId = d && typeof d === 'object' ? (d.id ?? '') : ''
+	if (nextId === labelId.value) return
+
+	labelId.value = nextId
+	labelDatum.value = nextId ? d : {}
 }
 
 onUnmounted(() => {

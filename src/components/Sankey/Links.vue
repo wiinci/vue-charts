@@ -6,7 +6,7 @@ import { sankeyLinkHorizontal } from 'd3-sankey'
 import { select } from 'd3-selection'
 import { linkHorizontal } from 'd3-shape'
 import { transition } from 'd3-transition'
-import { computed, inject, ref, Ref, watchEffect } from 'vue'
+import { computed, inject, ref, Ref, watch, watchEffect } from 'vue'
 
 const props = defineProps<{
 	data: SankeyLink[]
@@ -28,6 +28,7 @@ const finalLinkAccessor = (d: any) => finalGenerator(d)
 
 const labelHoverDatum = inject<Ref<any>>('labelDatum', ref({}))
 const labelHoverId = inject<Ref<string>>('labelId', ref(''))
+const animationsEnabled = inject<Ref<boolean>>('animationsEnabled', ref(true))
 
 // Use the highlight links composable
 const { shouldHighlight, processHoveredNode } = useHighlightLinks(
@@ -35,14 +36,27 @@ const { shouldHighlight, processHoveredNode } = useHighlightLinks(
 	computed(() => props.collapsedNodes),
 )
 
+const collapsedKey = computed(() => Array.from(props.collapsedNodes).sort().join('|'))
+
+watch(
+	[() => labelHoverId.value, collapsedKey],
+	() => {
+		const hoveredNode = labelHoverDatum.value
+		if (hoveredNode && typeof hoveredNode.id !== 'undefined') {
+			processHoveredNode(hoveredNode)
+			return
+		}
+
+		processHoveredNode(null)
+	},
+	{ immediate: true },
+)
+
 watchEffect(() => {
   if (!nodeRef.value) return
 
   const data = props.data
-	if (labelHoverDatum.value && typeof labelHoverDatum.value.id !== 'undefined') {
-		processHoveredNode(labelHoverDatum.value)
-	}
-
+	const isAnimated = animationsEnabled.value
 	const tfast = transition().duration(constants.duration.fast)
 
 	select(nodeRef.value)
@@ -60,15 +74,20 @@ watchEffect(() => {
 						}),
 					)
 					.attr('stroke-width', (d: any) => Math.max(1, d.width))
-					.attr('d', initialLinkAccessor)
-					.call((enter) =>
+					.call((enter) => {
+						if (!isAnimated) {
+							enter.attr('d', finalLinkAccessor)
+							return
+						}
+
 						enter
+							.attr('d', initialLinkAccessor)
 							.transition(tfast)
 							.delay((d: any) => constants.duration.fast * ((d.source.depth || 0) + 1))
-							.attr('d', finalLinkAccessor),
-					),
-			(update) =>
-				update
+							.attr('d', finalLinkAccessor)
+					}),
+			(update) => {
+				const base = update
 					.classed(
 						'raise',
 						(d: any) =>
@@ -77,8 +96,6 @@ watchEffect(() => {
 								falseValue: false,
 							}) as boolean,
 					)
-					.transition(tfast)
-					.attr('d', finalLinkAccessor)
 					.attr('stroke', (d: any) =>
 						shouldHighlight(d, {
 							trueValue: constants.linkColorHighlight,
@@ -90,8 +107,20 @@ watchEffect(() => {
 							trueValue: 1.2,
 							falseValue: 1,
 						}),
-					),
-			(exit) =>
+					)
+
+				if (!isAnimated) {
+					return base.attr('d', finalLinkAccessor)
+				}
+
+				return base.transition(tfast).attr('d', finalLinkAccessor)
+			},
+			(exit) => {
+				if (!isAnimated) {
+					exit.remove()
+					return
+				}
+
 				exit
 					.transition(tfast)
 					.delay((d: any) => {
@@ -99,7 +128,8 @@ watchEffect(() => {
 						return constants.duration.fast * (maxDepth - (d.source.depth || 0))
 					})
 					.attr('d', initialLinkAccessor)
-					.remove(),
+					.remove()
+			},
 		)
 
 	// Raise highlighted links to appear on top

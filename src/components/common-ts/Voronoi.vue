@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Delaunay as delaunay } from 'd3-delaunay'
 import { pointer, select } from 'd3-selection'
-import { computed, ref, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, watchEffect } from 'vue'
 
 interface Datum {
 	date: Date
@@ -24,6 +24,11 @@ const emit = defineEmits<{
 }>()
 
 const voronoiRef = ref<SVGGElement | null>(null)
+let rafId: number | null = null
+let pendingX = 0
+let pendingY = 0
+let pendingData: Datum[] | null = null
+const shouldCoalesce = computed(() => props.classKey === 'sankey')
 
 // Memoize the Delaunay computation
 const voronoi = computed(() =>
@@ -34,12 +39,37 @@ const voronoi = computed(() =>
 	),
 )
 
-const handlePointerMove = (event: PointerEvent, data: Datum[]) => {
-	const [x, y] = pointer(event)
+const emitNearest = (x: number, y: number, data: Datum[]) => {
+	if (!data.length) return
+
 	const i = voronoi.value.find(x, y)
-	if (i !== undefined) {
+	if (i !== undefined && i >= 0 && i < data.length) {
 		emit('move-to', { d: data[i] })
 	}
+}
+
+const flushPointerMove = () => {
+	rafId = null
+	if (!pendingData) return
+
+	emitNearest(pendingX, pendingY, pendingData)
+}
+
+const handlePointerMove = (event: PointerEvent, data: Datum[]) => {
+	if (!data.length) return
+
+	const [x, y] = pointer(event)
+	if (!shouldCoalesce.value) {
+		emitNearest(x, y, data)
+		return
+	}
+
+	pendingX = x
+	pendingY = y
+	pendingData = data
+
+	if (rafId !== null) return
+	rafId = window.requestAnimationFrame(flushPointerMove)
 }
 
 // Add a click event handler to emit the clicked node's identifier
@@ -50,6 +80,19 @@ const handleClick = (event: PointerEvent, data: Datum[]) => {
 		emit('node-click', { id: data[i].id })
 	}
 }
+
+const handlePointerLeave = () => {
+	pendingData = null
+	if (!props.data.length) return
+	emit('move-to', { d: props.data[props.data.length - 1] })
+}
+
+onUnmounted(() => {
+	if (rafId !== null) {
+		window.cancelAnimationFrame(rafId)
+		rafId = null
+	}
+})
 
 watchEffect(() => {
 	if (!voronoiRef.value) return
@@ -63,7 +106,7 @@ watchEffect(() => {
 		.attr('fill', 'none')
 		.attr('pointer-events', 'all')
 		.on('pointermove', (e: PointerEvent, d: Datum[]) => handlePointerMove(e, d))
-		.on('pointerleave', () => emit('move-to', { d: props.data[props.data.length - 1] }))
+		.on('pointerleave', handlePointerLeave)
 		.on('click', (e: PointerEvent, d: Datum[]) => handleClick(e, d))
 })
 </script>

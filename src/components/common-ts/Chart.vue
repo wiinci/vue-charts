@@ -42,6 +42,7 @@ const transform = computed(() => `translate(${props.marginLeft}, ${props.marginT
 
 <style module>
 .chart {
+	contain: layout style paint;
 	border: 1px solid;
 	display: flex;
 	margin: 0 auto;
