@@ -3,15 +3,14 @@ import { formatTime, smartTicks, xAxisPatterns, yAxisPatterns } from '@/utils'
 import { AxisScale, axisBottom, axisLeft } from 'd3-axis'
 import { NumberValue, ScaleLinear } from 'd3-scale'
 import { select } from 'd3-selection'
-import type { PropType } from 'vue'
 import { ref, watchEffect } from 'vue'
 
-const props = defineProps({
-	height: Number,
-	width: Number,
-	x: Function as PropType<AxisScale<Date | NumberValue>>,
-	y: Function as PropType<ScaleLinear<number, number, never>>,
-})
+const props = defineProps<{
+	height?: number
+	width?: number
+	x?: AxisScale<Date | NumberValue>
+	y?: ScaleLinear<number, number, never>
+}>()
 
 const axisRef = ref(null)
 

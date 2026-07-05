@@ -50,9 +50,6 @@ watch(
 )
 const cdata = computed(() => parsed.value)
 
-const cwidth = computed(() => width - marginLeft - marginRight)
-const cheight = computed(() => height - marginTop - marginBottom)
-
 // Planner
 const chartProps = computed(() => ({
 	data: cdata.value,
@@ -64,7 +61,7 @@ const chartProps = computed(() => ({
 	marginRight,
 }))
 
-const { pathD, xScale, yScale } = useLineChart(chartProps)
+const { pathD, xScale, yScale, innerWidth, innerHeight } = useLineChart(chartProps)
 
 // Initialize with a default datum to satisfy the type requirements
 const defaultDatum: LineChartDatum = {
@@ -82,12 +79,12 @@ const xAccessor = (d: LineChartDatum) => xScale.value(d.date)
 
 <template>
 	<Chart :height="height" :marginLeft="marginLeft" :marginTop="marginTop" :width="width">
-		<Tooltip :data="cdata" :height="cheight" :move-to="moveTo" :width="cwidth" />
-		<Axis :y="yScale" :width="cwidth" />
+		<Tooltip :data="cdata" :height="innerHeight" :move-to="moveTo" :width="innerWidth" />
+		<Axis :y="yScale" :width="innerWidth" />
 		<Gradient
 			:domain="yScale.domain()"
 			:end="0.8"
-			:height="cheight"
+			:height="innerHeight"
 			:id="'line-gradient'"
 			:marginBottom="marginBottom"
 			:marginTop="marginTop"
@@ -95,12 +92,12 @@ const xAccessor = (d: LineChartDatum) => xScale.value(d.date)
 			:ticks="10"
 		/>
 		<Line :pathD="pathD" :gradientId="'line-gradient'" />
-		<Axis :height="cheight" :width="cwidth" :x="xScale" />
+		<Axis :height="innerHeight" :width="innerWidth" :x="xScale" />
 		<Voronoi
 			:classKey="'linechart'"
 			:data="cdata"
-			:height="cheight"
-			:width="cwidth"
+			:height="innerHeight"
+			:width="innerWidth"
 			:xAccessor="xAccessor"
 			@move-to="handleMoveTo"
 		/>

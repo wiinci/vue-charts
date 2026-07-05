@@ -9,7 +9,7 @@ import {
 	useNodesAndLinks,
 } from '@/composables/useNodesAndLinks'
 // } from '@/hooks/useNodesAndLinks2'
-import { computed, provide, ref, watchEffect } from 'vue'
+import { computed, onUnmounted, provide, ref } from 'vue'
 import Labels from './Labels.vue'
 import Links from './Links.vue'
 import Nodes from './Nodes.vue'
@@ -61,8 +61,8 @@ const yAccessor = computed(() => (d: SankeyNode) => d.y)
 
 // Use collapsed composable
 const { collapsedNodes, filteredNodes, filteredLinks, toggleCollapse } = useCollapsed(
-	computed(() => nodes),
-	computed(() => links),
+	nodes,
+	links,
 )
 
 /**
@@ -74,15 +74,16 @@ const handleNodeClick = ({ id }: { id: string }) => toggleCollapse(id)
  * Update highlight state based on hovered node
  */
 function highlightLinks({ d }: { d: SankeyNode | any }) {
-	labelId.value = d && typeof d === 'object' ? d.id : ''
-	labelDatum.value = d && typeof d === 'object' ? d : {}
+	const nextId = d && typeof d === 'object' ? (d.id ?? '') : ''
+	if (nextId === labelId.value) return
+
+	labelId.value = nextId
+	labelDatum.value = nextId ? d : {}
 }
 
-watchEffect((onCleanup) => {
-	onCleanup(() => {
-		labelId.value = ''
-		labelDatum.value = {}
-	})
+onUnmounted(() => {
+	labelId.value = ''
+	labelDatum.value = {}
 })
 </script>
 
@@ -92,7 +93,6 @@ watchEffect((onCleanup) => {
 		<Nodes
 			:data="filteredNodes"
 			:nodeId="nodeId"
-			:collapsedNodes="collapsedNodes"
 			@click="toggleCollapse"
 		/>
 		<Labels

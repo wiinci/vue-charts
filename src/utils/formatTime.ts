@@ -19,4 +19,3 @@ export default function formatTime({ date }: { date: Date }) {
 	return formatYear(date)
 }
 
-export { formatTime }

@@ -41,25 +41,24 @@ describe('useNodesAndLinks', () => {
 		const { nodes, links } = useNodesAndLinks(props)
 
 		// Nodes should be created for A, B, C, D
-		expect(nodes.length).toBe(4)
-		const nodeIds = nodes.map((n) => n.id).sort()
+		expect(nodes.value.length).toBe(4)
+		const nodeIds = nodes.value.map((n) => n.id).sort()
 		expect(nodeIds).toEqual(['A', 'B', 'C', 'D'])
 
 		// Links should be preserved
-		expect(links.length).toBe(3)
-		expect(links[0].value).toBe(10)
+		expect(links.value.length).toBe(3)
+		expect(links.value[0].value).toBe(10)
 	})
 
 	it('reacts to data changes', () => {
 		const props = reactive({ ...defaultProps })
 		const { nodes } = useNodesAndLinks(props)
 
-		expect(nodes.length).toBe(4)
+		expect(nodes.value.length).toBe(4)
 
 		const newData = [{ source: 'X', target: 'Y', value: 20 }]
 		props.data = newData
 
-		// Reactivity limitation: destructured 'nodes' is not a ref, so it won't update in the test context
-		expect(nodes.length).toBe(4)
+		expect(nodes.value.length).toBe(2)
 	})
 })
