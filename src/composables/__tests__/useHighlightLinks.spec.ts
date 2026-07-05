@@ -1,16 +1,30 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { useHighlightLinks } from '../useHighlightLinks'
+import { SankeyLink, SankeyNode } from '../useNodesAndLinks'
 
 describe('useHighlightLinks', () => {
 	// Mock nodes structure
-	const createNode = (id: string) => ({ id, sourceLinks: [], targetLinks: [] })
+	const createNode = (id: string): SankeyNode => ({
+		id,
+		x0: 0,
+		x1: 0,
+		y0: 0,
+		y1: 0,
+		x: 0,
+		y: 0,
+		width: 0,
+		height: 0,
+		value: 0,
+		sourceLinks: [],
+		targetLinks: [],
+	})
 
 	// Helper to connect nodes
-	const connect = (source: any, target: any) => {
-		const link = { source, target, value: 1 }
-		source.sourceLinks.push(link)
-		target.targetLinks.push(link)
+	const connect = (source: SankeyNode, target: SankeyNode): SankeyLink => {
+		const link = { source, target, value: 1 } as SankeyLink
+		source.sourceLinks!.push(link)
+		target.targetLinks!.push(link)
 		return link
 	}
 

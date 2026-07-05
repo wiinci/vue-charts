@@ -19,7 +19,7 @@ const animationsEnabled = ref(false)
 provide('animationsEnabled', animationsEnabled)
 
 let idleCallbackId: number | null = null
-let timeoutId: number | null = null
+let timeoutId: ReturnType<typeof setTimeout> | null = null
 let animationRafA: number | null = null
 let animationRafB: number | null = null
 
@@ -32,7 +32,7 @@ const runWhenIdle = (cb: () => void) => {
 		return
 	}
 
-	timeoutId = window.setTimeout(() => {
+	timeoutId = globalThis.setTimeout(() => {
 		timeoutId = null
 		cb()
 	}, 1)

@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { reactive } from 'vue'
 import { SankeyLink, SankeyProps, useNodesAndLinks } from '../useNodesAndLinks'
 
+const getNodeId = (node: SankeyLink['source'] | SankeyLink['target']) =>
+	typeof node === 'object' ? node.id : String(node)
+
 describe('useNodesAndLinks', () => {
 	const mockData: SankeyLink[] = [
 		{ source: 'A', target: 'B', value: 10 },
@@ -132,8 +135,8 @@ describe('useNodesAndLinks', () => {
 		])
 
 		expect(links.value.slice(0, 3).map((link) => ({
-			source: typeof link.source === 'string' ? link.source : link.source.id,
-			target: typeof link.target === 'string' ? link.target : link.target.id,
+			source: getNodeId(link.source),
+			target: getNodeId(link.target),
 			width: link.width,
 			y0: link.y0,
 			y1: link.y1,
