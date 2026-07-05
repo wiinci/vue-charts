@@ -1,56 +1,18 @@
 import { sankey, sankeyCenter, sankeyJustify, sankeyLeft, sankeyRight } from 'd3-sankey'
-import { computed, ComputedRef, ref, UnwrapRef } from 'vue'
+import { computed, type ComputedRef } from 'vue'
+import {
+	getSankeyNodeKey,
+	normalizeSankeyData,
+	type SankeyLayoutData,
+	type SankeyLink,
+	type SankeyLinkDatum,
+	type SankeyNode,
+	type SankeyNodeDatum,
+	type SankeyProps,
+	withSankeyNodeGeometry,
+} from './sankeyModel'
 
-export interface SankeyNode {
-	id: string
-	x0: number
-	x1: number
-	y0: number
-	y1: number
-	value: number
-	index?: number
-	depth?: number
-
-	layer?: number
-	sourceLinks?: SankeyLink[]
-	targetLinks?: SankeyLink[]
-	[key: string]: any
-	// Derived geometry for strict Planner contract
-	x: number
-	y: number
-	width: number
-	height: number
-}
-
-export interface SankeyLink {
-	source: SankeyNode | string
-	target: SankeyNode | string
-	value: number
-	width?: number
-	y0?: number
-	y1?: number
-	[key: string]: any
-}
-
-export interface SankeyProps {
-	data: SankeyLink[]
-	height: number
-	marginLeft: number
-	marginTop: number
-	marginBottom: number
-	marginRight: number
-	nodeAlign: 'justify' | 'left' | 'right' | 'center'
-	nodeId: string
-	nodePadding: number
-	nodeWidth: number
-	sort: boolean
-	width: number
-}
-
-interface SankeyData {
-	nodes: SankeyNode[]
-	links: SankeyLink[]
-}
+export type { SankeyLink, SankeyProps, SankeyNode } from './sankeyModel'
 
 export interface SankeyResult {
 	chartHeight: ComputedRef<number>
@@ -59,7 +21,7 @@ export interface SankeyResult {
 	links: ComputedRef<SankeyLink[]>
 }
 
-export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
+export function useNodesAndLinks(props: SankeyProps): SankeyResult {
 	// Map nodeAlign to the corresponding sankey alignment function
 	const alignMap = {
 		justify: sankeyJustify,
@@ -75,9 +37,9 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 
 	// Create sankey generator as a computed so it rebuilds when any config prop changes
 	const sankeyGenerator = computed(() => {
-		const gen = sankey()
+		const gen = sankey<SankeyLayoutData, SankeyNodeDatum, SankeyLinkDatum>()
 			.nodeAlign(align.value)
-			.nodeId((d: any) => (d as any)[props.nodeId])
+			.nodeId((node) => getSankeyNodeKey(node, props.nodeId))
 			.nodePadding(props.nodePadding)
 			.nodeWidth(props.nodeWidth)
 			.extent([
@@ -91,53 +53,14 @@ export function useNodesAndLinks(props: UnwrapRef<SankeyProps>): SankeyResult {
 	})
 
 	// Build node map from link data as a computed — synchronously reactive to props.data changes
-	const processedData = computed<SankeyData>(() => {
-		const nodeById = new Map<string, SankeyNode>()
-		const links = props.data.map((link) => ({
-			...link,
-			value: link.value || 1,
-		}))
-		for (const link of links) {
-			const sourceId = typeof link.source === 'string' ? link.source : link.source.id
-			const targetId = typeof link.target === 'string' ? link.target : link.target.id
-			if (!nodeById.has(sourceId)) {
-				nodeById.set(sourceId, {
-					[props.nodeId]: sourceId,
-					id: sourceId,
-					x0: 0,
-					x1: 0,
-					y0: 0,
-					y1: 0,
-					value: 0,
-				} as SankeyNode)
-			}
-			if (!nodeById.has(targetId)) {
-				nodeById.set(targetId, {
-					[props.nodeId]: targetId,
-					id: targetId,
-					x0: 0,
-					x1: 0,
-					y0: 0,
-					y1: 0,
-					value: 0,
-				} as SankeyNode)
-			}
-		}
-		return { nodes: Array.from(nodeById.values()), links }
-	})
+	const processedData = computed(() => normalizeSankeyData(props.data, props.nodeId))
 
 	// Generate the sankey diagram
 	const sankeyData = computed(() => {
-		const { nodes, links } = sankeyGenerator.value(processedData.value as SankeyData)
-		// 3. Plan Output: Enrich nodes with standard geometry
+		const { nodes, links } = sankeyGenerator.value(processedData.value)
+
 		return {
-			nodes: nodes.map((node) => ({
-				...node,
-				x: node.x0 ?? 0,
-				y: node.y0 ?? 0,
-				width: (node.x1 ?? 0) - (node.x0 ?? 0),
-				height: (node.y1 ?? 0) - (node.y0 ?? 0),
-			})),
+			nodes: nodes.map(withSankeyNodeGeometry),
 			links,
 		}
 	})

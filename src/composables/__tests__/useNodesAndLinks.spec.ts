@@ -1,6 +1,10 @@
+import sankeyJsonData from '@/data/edges2.json'
 import { describe, expect, it } from 'vitest'
 import { reactive } from 'vue'
 import { SankeyLink, SankeyProps, useNodesAndLinks } from '../useNodesAndLinks'
+
+const getNodeId = (node: SankeyLink['source'] | SankeyLink['target']) =>
+	typeof node === 'object' ? node.id : String(node)
 
 describe('useNodesAndLinks', () => {
 	const mockData: SankeyLink[] = [
@@ -60,5 +64,104 @@ describe('useNodesAndLinks', () => {
 		props.data = newData
 
 		expect(nodes.value.length).toBe(2)
+	})
+
+	it('preserves current app sankey geometry values', () => {
+		const props = reactive<SankeyProps>({
+			data: sankeyJsonData.map((item) => ({ ...item, value: 1 })) as SankeyLink[],
+			height: 480,
+			width: 960,
+			marginLeft: 20,
+			marginRight: 20,
+			marginTop: 20,
+			marginBottom: 20,
+			nodeAlign: 'justify',
+			nodeId: 'id',
+			nodePadding: 1e9,
+			nodeWidth: 1e-9,
+			sort: false,
+		})
+
+		const { nodes, links } = useNodesAndLinks(props)
+
+		expect(nodes.value).toHaveLength(49)
+		expect(links.value).toHaveLength(41)
+		expect(nodes.value.every((node) => node.height === 0)).toBe(true)
+		expect(links.value.every((link) => (link.width ?? 0) === 0)).toBe(true)
+
+		const uniqueNodeWidths = Array.from(new Set(nodes.value.map((node) => node.width))).sort(
+			(a, b) => a - b,
+		)
+		expect(uniqueNodeWidths).toHaveLength(2)
+		expect(uniqueNodeWidths[0]).toBeCloseTo(9.999894245993346e-10, 20)
+		expect(uniqueNodeWidths[1]).toBeCloseTo(1.000000082740371e-9, 20)
+
+		expect(nodes.value.slice(0, 3).map((node) => ({
+			id: node.id,
+			x0: node.x0,
+			x1: node.x1,
+			y0: node.y0,
+			y1: node.y1,
+			width: node.width,
+			height: node.height,
+		}))).toEqual([
+			{
+				id: 'n9::n3',
+				x0: 20,
+				x1: 20.000000001,
+				y0: 342.33446784494924,
+				y1: 342.33446784494924,
+				width: 1.000000082740371e-9,
+				height: 0,
+			},
+			{
+				id: 'n10::n3',
+				x0: 326.66666666633336,
+				x1: 326.66666666733335,
+				y0: 342.3669121276552,
+				y1: 342.3669121276552,
+				width: 9.999894245993346e-10,
+				height: 0,
+			},
+			{
+				id: 'n10::n2',
+				x0: 326.66666666633336,
+				x1: 326.66666666733335,
+				y0: 132.63809266964822,
+				y1: 132.63809266964822,
+				width: 9.999894245993346e-10,
+				height: 0,
+			},
+		])
+
+		expect(links.value.slice(0, 3).map((link) => ({
+			source: getNodeId(link.source),
+			target: getNodeId(link.target),
+			width: link.width,
+			y0: link.y0,
+			y1: link.y1,
+		}))).toEqual([
+			{
+				source: 'n9::n3',
+				target: 'n10::n3',
+				width: 0,
+				y0: 342.33446784494924,
+				y1: 342.3669121276552,
+			},
+			{
+				source: 'n10::n2',
+				target: 'n4::n2',
+				width: 0,
+				y0: 132.63809266964822,
+				y1: 87.69230769230768,
+			},
+			{
+				source: 'n10::n5',
+				target: 'n4::n5',
+				width: 0,
+				y0: 232.9776343102234,
+				y1: 206.15384615384633,
+			},
+		])
 	})
 })

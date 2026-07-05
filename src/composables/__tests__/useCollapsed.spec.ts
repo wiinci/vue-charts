@@ -4,6 +4,9 @@ import { useCollapsed } from '../useCollapsed'
 import { SankeyLink, SankeyNode } from '../useNodesAndLinks'
 
 describe('useCollapsed', () => {
+	const getId = (node: SankeyLink['source'] | SankeyLink['target']) =>
+		typeof node === 'object' ? node.id : String(node)
+
 	// Helpers
 	const createNode = (id: string, depth = 0, height = 0): SankeyNode => ({
 		id,
@@ -11,6 +14,9 @@ describe('useCollapsed', () => {
 		x1: 0,
 		y0: 0,
 		y1: 0,
+		x: 0,
+		y: 0,
+		width: 0,
 		value: 0,
 		depth,
 		height,
@@ -143,9 +149,6 @@ describe('useCollapsed', () => {
 	})
 
 	describe('Complex Scenarios', () => {
-		// Helper to extract ID safely since source/target can be string | SankeyNode
-		const getId = (n: SankeyNode | string) => (typeof n === 'string' ? n : n.id)
-
 		// Helper to quick link
 		const link = (source: SankeyNode, target: SankeyNode) => {
 			const l = { source, target, value: 1 } as unknown as SankeyLink

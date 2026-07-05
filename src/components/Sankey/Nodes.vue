@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { constants } from '@/assets/constants'
 import { SankeyNode } from '@/composables/useNodesAndLinks'
+import { getSankeyNodeKey } from '@/composables/sankeyModel'
 import { select } from 'd3-selection'
 import { transition } from 'd3-transition'
 import { inject, ref, Ref, watchEffect } from 'vue'
@@ -19,6 +20,8 @@ const emit = defineEmits<{
 const nodeRef = ref<SVGGElement | null>(null)
 const animationsEnabled = inject<Ref<boolean>>('animationsEnabled', ref(true))
 
+const getNodeKey = (node: SankeyNode): string => getSankeyNodeKey(node, props.nodeId)
+
 // Reactively update when dependencies change
 watchEffect(() => {
 	if (!nodeRef.value) return
@@ -27,33 +30,33 @@ watchEffect(() => {
 	const tfast = transition().duration(constants.duration.fast)
 
 	select(nodeRef.value)
-		.selectAll('rect')
-		.data(props.data, (d: any) => d[props.nodeId])
+		.selectAll<SVGRectElement, SankeyNode>('rect')
+		.data(props.data, getNodeKey)
 		.join(
 			(enter) =>
 				enter
 					.append('rect')
 					.attr('fill', constants.nodeColor)
-					.attr('height', (d: any) => d.height)
-					.attr('width', (d: any) => d.width)
-					.attr('x', (d: any) => d.x)
-					.attr('y', (d: any) => d.y)
+					.attr('height', (node) => node.height)
+					.attr('width', (node) => node.width)
+					.attr('x', (node) => node.x)
+					.attr('y', (node) => node.y)
 					.attr('opacity', isAnimated ? 0 : 1)
-					.on('click', (_, d: any) => emit('click', d[props.nodeId]))
-					.call((enter) => {
+					.on('click', (_, node) => emit('click', getNodeKey(node)))
+					.call((selection) => {
 						if (!isAnimated) return
 
-						enter
+						selection
 							.transition(tfast)
-							.delay((d: any) => constants.duration.medium * ((d.depth || 0) + 1))
+							.delay((node) => constants.duration.medium * ((node.depth || 0) + 1))
 							.attr('opacity', 1)
 					}),
 			(update) => {
 				const base = update
-					.attr('height', (d: any) => d.height)
-					.attr('width', (d: any) => d.width)
-					.attr('x', (d: any) => d.x)
-					.attr('y', (d: any) => d.y)
+					.attr('height', (node) => node.height)
+					.attr('width', (node) => node.width)
+					.attr('x', (node) => node.x)
+					.attr('y', (node) => node.y)
 					.attr('opacity', 1)
 
 				if (!isAnimated) {
