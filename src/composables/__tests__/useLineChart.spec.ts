@@ -36,6 +36,28 @@ describe('useLineChart', () => {
 		expect(pathD.value).toContain('M')
 	})
 
+	it('rounds generated path coordinates to two decimals', () => {
+		const data = [
+			{ date: new Date('2023-01-01T00:00:00Z'), value: 10 },
+			{ date: new Date('2023-01-02T12:00:00Z'), value: 15 },
+			{ date: new Date('2023-01-04T00:00:00Z'), value: 20 },
+		]
+		const props = ref({
+			data,
+			width: 103,
+			height: 97,
+			marginTop: 7,
+			marginBottom: 11,
+			marginLeft: 13,
+			marginRight: 5,
+		})
+
+		const { pathD } = useLineChart(props)
+
+		expect(pathD.value).toContain('M')
+		expect(pathD.value).not.toMatch(/\d+\.\d{3,}/)
+	})
+
 	it('handles empty data gracefully', () => {
 		const props = ref({
 			data: [],

@@ -2,6 +2,7 @@ import { extent, max } from 'd3-array'
 import { scaleLinear, scaleUtc } from 'd3-scale'
 import { curveStep, line as lineFunc } from 'd3-shape'
 import { computed, Ref } from 'vue'
+import { optimizeSvgPath } from '@/utils'
 
 export interface LineChartDatum {
 	date: Date
@@ -48,7 +49,7 @@ export function useLineChart(props: Ref<LineChartProps>) {
 			.curve(curveStep),
 	)
 
-	const pathD = computed(() => lineGenerator.value(props.value.data) || '')
+	const pathD = computed(() => optimizeSvgPath(lineGenerator.value(props.value.data) || ''))
 
 	return {
 		innerWidth,
