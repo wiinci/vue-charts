@@ -1,5 +1,14 @@
 import { computed, ComputedRef, ref, Ref, watchEffect } from 'vue'
 import { SankeyLink, SankeyNode } from './useNodesAndLinks'
+import {
+	allIncomingSourcesMatch,
+	collectDownstreamNodeIds,
+	collectRootSourceIds,
+	createNodeLookup,
+	getLinkSourceId,
+	getLinkTargetId,
+	getLinkTargetNode,
+} from './sankeyTraversal'
 
 export interface CollapsedResult {
 	collapsedNodes: Ref<Set<string>>
@@ -13,25 +22,22 @@ export function useCollapsed(
 	links: ComputedRef<SankeyLink[]>,
 ): CollapsedResult {
 	const collapsedNodes = ref<Set<string>>(new Set())
+	const nodeLookup = computed(() => createNodeLookup(nodes.value))
 
 	/**
 	 * Get a node by its ID from the nodes array
 	 */
 	function getNodeById(id: string): SankeyNode | undefined {
-		return nodes.value.find((n) => n.id === id)
+		return nodeLookup.value.get(id)
 	}
 
 	/**
 	 * Check if all source nodes of a given node are collapsed
 	 */
 	function allSourcesCollapsed(node: SankeyNode): boolean {
-		if (!node.targetLinks || node.targetLinks.length === 0) {
-			return false
-		}
-		return node.targetLinks.every((link) => {
-			const sourceId = typeof link.source === 'object' ? link.source.id : (link.source as string)
-			return collapsedNodes.value.has(sourceId)
-		})
+		return allIncomingSourcesMatch(node, nodeLookup.value, (sourceNode) =>
+			collapsedNodes.value.has(sourceNode.id),
+		)
 	}
 
 	/**
@@ -42,10 +48,10 @@ export function useCollapsed(
 		if (!node || !node.sourceLinks) return
 
 		node.sourceLinks.forEach((link) => {
-			const targetId = typeof link.target === 'object' ? link.target.id : (link.target as string)
-			const targetNode = getNodeById(targetId)
+			const targetNode = getLinkTargetNode(link, nodeLookup.value)
 
 			if (!targetNode) return
+			const targetId = targetNode.id
 
 			if (!allSourcesCollapsed(targetNode) && collapsedNodes.value.has(targetId)) {
 				collapsedNodes.value.delete(targetId)
@@ -66,57 +72,14 @@ export function useCollapsed(
 		visited = new Set<string>(),
 		sourceDepth?: number,
 	): Set<string> {
-		const node = getNodeById(nodeId)
-		const currentDepth = sourceDepth ?? node?.depth ?? 0
-		visited.add(nodeId)
-
-		if (!node?.sourceLinks) {
-			return visited
-		}
-
-		node.sourceLinks.forEach((link) => {
-			const targetNode =
-				typeof link.target === 'object'
-					? (link.target as SankeyNode)
-					: getNodeById(link.target as string)
-			if (!targetNode) return
-
-			const targetDepth = targetNode.depth ?? currentDepth + 1
-			if (targetDepth <= currentDepth) return
-
-			if (!visited.has(targetNode.id)) {
-				collectDownstream(targetNode.id, visited, targetDepth)
-			}
-		})
-
-		return visited
+		return collectDownstreamNodeIds(nodeId, nodeLookup.value, visited, sourceDepth)
 	}
 
 	/**
 	 * Find all source root nodes that lead to a given node
 	 */
 	function findNodeRootSources(nodeId: string, visited = new Set<string>()): Set<string> {
-		visited.add(nodeId)
-		const node = getNodeById(nodeId)
-
-		if (!node) return new Set<string>()
-
-		// If node has no incoming links, it's a root source
-		if (!node.targetLinks || node.targetLinks.length === 0) {
-			return new Set([nodeId])
-		}
-
-		// Otherwise, recursively find all root source nodes
-		const roots = new Set<string>()
-		node.targetLinks.forEach((link) => {
-			const sourceId = typeof link.source === 'object' ? link.source.id : (link.source as string)
-
-			if (!visited.has(sourceId)) {
-				findNodeRootSources(sourceId, visited).forEach((r) => roots.add(r))
-			}
-		})
-
-		return roots
+		return collectRootSourceIds(nodeId, nodeLookup.value, visited)
 	}
 
 	/**
@@ -133,7 +96,7 @@ export function useCollapsed(
 		}
 
 		const immediateSourcesCollapsed = incomingLinks.every((link) => {
-			const srcId = typeof link.source === 'object' ? link.source.id : link.source
+			const srcId = getLinkSourceId(link)
 			return srcId === parentId || collapsedNodes.value.has(srcId)
 		})
 
@@ -198,10 +161,7 @@ export function useCollapsed(
 		function dfs(node: SankeyNode) {
 			if (!node.sourceLinks) return
 			node.sourceLinks.forEach((link) => {
-				const targetNode =
-					typeof link.target === 'object'
-						? (link.target as SankeyNode)
-						: getNodeById(link.target as string)
+				const targetNode = getLinkTargetNode(link, nodeLookup.value)
 				if (!targetNode) return
 
 				// Prevent infinite recursion if cyclic (though Sankey shouldn't be)
@@ -228,8 +188,8 @@ export function useCollapsed(
 	 */
 	const filteredLinks = computed((): SankeyLink[] =>
 		links.value.filter((link) => {
-			const sourceId = typeof link.source === 'object' ? link.source.id : (link.source as string)
-			const targetId = typeof link.target === 'object' ? link.target.id : (link.target as string)
+			const sourceId = getLinkSourceId(link)
+			const targetId = getLinkTargetId(link)
 			// Hide links outgoing from collapsed nodes
 			if (collapsedNodes.value.has(sourceId)) return false
 			// Hide links involving any collapsed descendants

@@ -4,9 +4,10 @@ import { pointer, select } from 'd3-selection'
 import { computed, onUnmounted, ref, watchEffect } from 'vue'
 
 interface Datum {
-	date: Date
-	value: number
-	[key: string]: any
+	id?: string
+	date?: Date
+	value?: number
+	[key: string]: unknown
 }
 
 const props = defineProps<{
@@ -77,7 +78,10 @@ const handleClick = (event: PointerEvent, data: Datum[]) => {
 	const [x, y] = pointer(event)
 	const i = voronoi.value.find(x, y)
 	if (i !== undefined && i >= 0 && i < data.length) {
-		emit('node-click', { id: data[i].id })
+		const id = data[i].id
+		if (typeof id === 'string') {
+			emit('node-click', { id })
+		}
 	}
 }
 

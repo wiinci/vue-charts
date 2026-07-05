@@ -5,7 +5,6 @@ import { useCollapsed } from '@/composables/useCollapsed'
 import {
 	SankeyLink,
 	SankeyNode,
-	SankeyProps,
 	useNodesAndLinks,
 } from '@/composables/useNodesAndLinks'
 // } from '@/hooks/useNodesAndLinks2'
@@ -45,10 +44,10 @@ const props = withDefaults(
 )
 
 // Use the refactored composables
-const { chartWidth, nodes, links } = useNodesAndLinks(props as SankeyProps)
+const { chartWidth, nodes, links } = useNodesAndLinks(props)
 
 // Reactive state for highlight functionality
-const labelDatum = ref<SankeyNode | {}>({})
+const labelDatum = ref<SankeyNode | null>(null)
 const labelId = ref<string>('')
 
 // Expose data to child components via provide/inject
@@ -73,17 +72,17 @@ const handleNodeClick = ({ id }: { id: string }) => toggleCollapse(id)
 /**
  * Update highlight state based on hovered node
  */
-function highlightLinks({ d }: { d: SankeyNode | any }) {
+function highlightLinks({ d }: { d: SankeyNode }) {
 	const nextId = d && typeof d === 'object' ? (d.id ?? '') : ''
 	if (nextId === labelId.value) return
 
 	labelId.value = nextId
-	labelDatum.value = nextId ? d : {}
+	labelDatum.value = nextId ? d : null
 }
 
 onUnmounted(() => {
 	labelId.value = ''
-	labelDatum.value = {}
+	labelDatum.value = null
 })
 </script>
 
@@ -104,11 +103,11 @@ onUnmounted(() => {
 		/>
 		<Voronoi
 			:classKey="'sankey'"
-			:data="filteredNodes as any"
+			:data="filteredNodes"
 			:height="height"
 			:width="width"
-			:xAccessor="xAccessor as any"
-			:yAccessor="yAccessor as any"
+			:xAccessor="xAccessor"
+			:yAccessor="yAccessor"
 			@move-to="highlightLinks"
 			@node-click="handleNodeClick"
 		/>
