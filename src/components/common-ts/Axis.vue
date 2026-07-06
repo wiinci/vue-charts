@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { formatTime, smartTicks, xAxisPatterns, yAxisPatterns } from '@/utils'
-import { AxisScale, axisBottom, axisLeft } from 'd3-axis'
-import { NumberValue, ScaleLinear } from 'd3-scale'
-import { select } from 'd3-selection'
-import { type PropType, ref, watchEffect } from 'vue'
+import {formatTime, smartTicks, xAxisPatterns, yAxisPatterns} from '@/utils'
+import {AxisScale, axisBottom, axisLeft} from 'd3-axis'
+import {NumberValue, ScaleLinear} from 'd3-scale'
+import {select} from 'd3-selection'
+import {type PropType, ref, watchEffect} from 'vue'
 
 const props = defineProps({
 	height: Number,
@@ -18,7 +18,7 @@ function axis() {
 	return axisBottom(props.x!)
 		.ticks(props.width! / 80)
 		.tickSizeOuter(0)
-		.tickFormat((d) => formatTime({ date: d instanceof Date ? d : new Date(d as number) }))
+		.tickFormat((d) => formatTime({date: d instanceof Date ? d : new Date(d as number)}))
 }
 
 function tickFn(ticks: any) {
@@ -45,7 +45,7 @@ watchEffect(() => {
 	} else if (props.y) {
 		const ticks = smartTicks(props.y!)
 		group.call(tickFn(ticks) as any)
-		yAxisPatterns({ node: axisRef.value as SVGGElement, width: props.width! })
+		yAxisPatterns({node: axisRef.value as SVGGElement, width: props.width!})
 	}
 })
 </script>

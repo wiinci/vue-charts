@@ -1,5 +1,5 @@
-import { computed, ComputedRef, ref, Ref, watchEffect } from 'vue'
-import { SankeyLink, SankeyNode } from './useNodesAndLinks'
+import {computed, ComputedRef, ref, Ref, watchEffect} from 'vue'
+import {SankeyLink, SankeyNode} from './useNodesAndLinks'
 import {
 	allIncomingSourcesMatch,
 	collectDownstreamNodeIds,

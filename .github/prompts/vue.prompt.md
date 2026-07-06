@@ -84,7 +84,7 @@ accessibility, performance, security, and scaling.
 
 ```vue
 <script setup>
-import { ref, computed } from 'vue'
+import {ref, computed} from 'vue'
 
 const count = ref(0)
 const doubleCount = computed(() => count.value * 2)
@@ -116,7 +116,7 @@ const props = defineProps({
 const emit = defineEmits(['update', 'delete'])
 
 function updateItem() {
-	emit('update', { id: 1 })
+	emit('update', {id: 1})
 }
 </script>
 ```
@@ -125,7 +125,7 @@ function updateItem() {
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue'
+import {ref} from 'vue'
 
 interface User {
 	id: number
@@ -145,10 +145,10 @@ const user = ref<User | null>(null)
 
 ```vue
 <script setup>
-import { reactive, toRefs } from 'vue'
+import {reactive, toRefs} from 'vue'
 
-const state = reactive({ count: 0, name: 'Vue' })
-const { count, name } = toRefs(state)
+const state = reactive({count: 0, name: 'Vue'})
+const {count, name} = toRefs(state)
 </script>
 ```
 
@@ -176,7 +176,7 @@ watch(searchQuery, async (newValue) => { if (newValue.length > 2) { await fetchR
 ```vue
 <!-- Parent component -->
 <script setup>
-import { provide, ref } from 'vue'
+import {provide, ref} from 'vue'
 
 const theme = ref('light')
 provide('theme', theme)
@@ -184,7 +184,7 @@ provide('theme', theme)
 
 <!-- Child component -->
 <script setup>
-import { inject } from 'vue'
+import {inject} from 'vue'
 
 const theme = inject('theme')
 </script>
@@ -194,7 +194,7 @@ const theme = inject('theme')
 
 ```js
 // useCounter.js
-import { ref } from 'vue'
+import {ref} from 'vue'
 
 export function useCounter() {
 	const count = ref(0)
@@ -216,7 +216,7 @@ export function useCounter() {
 
 ```js
 // store/users.js
-import { defineStore } from 'pinia'
+import {defineStore} from 'pinia'
 
 export const useUsersStore = defineStore('users', {
 	state: () => ({
@@ -328,7 +328,7 @@ const UserProfile = () => import('./UserProfile.vue')
 <div>{{ sanitizedHtml }}</div>
 
 <script setup>
-import { computed } from 'vue'
+import {computed} from 'vue'
 import DOMPurify from 'dompurify'
 
 const sanitizedHtml = computed(() => DOMPurify.sanitize(props.userContent))
@@ -370,7 +370,7 @@ function isSafeURL(url) {
 - Create simple, focused test cases
 
 ```js
-import { mount } from '@vue/test-utils'
+import {mount} from '@vue/test-utils'
 import Counter from './Counter.vue'
 
 test('increments count when button is clicked', async () => {

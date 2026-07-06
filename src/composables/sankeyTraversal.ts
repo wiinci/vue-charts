@@ -1,5 +1,5 @@
-import type { SankeyLink, SankeyNode } from './sankeyModel'
-import { getNodeIdFromReference } from './sankeyModel'
+import type {SankeyLink, SankeyNode} from './sankeyModel'
+import {getNodeIdFromReference} from './sankeyModel'
 
 type TraversalDirection = 'sourceLinks' | 'targetLinks'
 

@@ -1,10 +1,6 @@
-import { ref, Ref } from 'vue'
-import { SankeyLink, SankeyNode } from './useNodesAndLinks'
-import {
-	getLinkSourceId,
-	getLinkTargetId,
-	traverseConnectedNodes,
-} from './sankeyTraversal'
+import {ref, Ref} from 'vue'
+import {SankeyLink, SankeyNode} from './useNodesAndLinks'
+import {getLinkSourceId, getLinkTargetId, traverseConnectedNodes} from './sankeyTraversal'
 
 interface HighlightOptions<T> {
 	trueValue: T
@@ -50,7 +46,7 @@ export function useHighlightLinks(labelHoverId: Ref<string>, collapsedNodes: Ref
 	 * Determine if a link should be highlighted based on hover state
 	 */
 	const shouldHighlight = <T>(link: SankeyLink, options: HighlightOptions<T>): T => {
-		const { trueValue, falseValue } = options
+		const {trueValue, falseValue} = options
 		const sourceId = getLinkSourceId(link)
 		const targetId = getLinkTargetId(link)
 

@@ -1,5 +1,5 @@
-import { sankey, sankeyCenter, sankeyJustify, sankeyLeft, sankeyRight } from 'd3-sankey'
-import { computed, type ComputedRef } from 'vue'
+import {sankey, sankeyCenter, sankeyJustify, sankeyLeft, sankeyRight} from 'd3-sankey'
+import {computed, type ComputedRef} from 'vue'
 import {
 	getSankeyNodeKey,
 	normalizeSankeyData,
@@ -12,7 +12,7 @@ import {
 	withSankeyNodeGeometry,
 } from './sankeyModel'
 
-export type { SankeyLink, SankeyProps, SankeyNode } from './sankeyModel'
+export type {SankeyLink, SankeyProps, SankeyNode} from './sankeyModel'
 
 export interface SankeyResult {
 	chartHeight: ComputedRef<number>
@@ -57,7 +57,7 @@ export function useNodesAndLinks(props: SankeyProps): SankeyResult {
 
 	// Generate the sankey diagram
 	const sankeyData = computed(() => {
-		const { nodes, links } = sankeyGenerator.value(processedData.value)
+		const {nodes, links} = sankeyGenerator.value(processedData.value)
 
 		return {
 			nodes: nodes.map(withSankeyNodeGeometry),

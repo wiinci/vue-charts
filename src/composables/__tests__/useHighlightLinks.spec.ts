@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import { ref } from 'vue'
-import { useHighlightLinks } from '../useHighlightLinks'
-import { SankeyLink, SankeyNode } from '../useNodesAndLinks'
+import {describe, expect, it} from 'vitest'
+import {ref} from 'vue'
+import {useHighlightLinks} from '../useHighlightLinks'
+import {SankeyLink, SankeyNode} from '../useNodesAndLinks'
 
 describe('useHighlightLinks', () => {
 	// Mock nodes structure
@@ -22,7 +22,7 @@ describe('useHighlightLinks', () => {
 
 	// Helper to connect nodes
 	const connect = (source: SankeyNode, target: SankeyNode): SankeyLink => {
-		const link = { source, target, value: 1 } as SankeyLink
+		const link = {source, target, value: 1} as SankeyLink
 		source.sourceLinks!.push(link)
 		target.targetLinks!.push(link)
 		return link
@@ -32,7 +32,7 @@ describe('useHighlightLinks', () => {
 		const labelHoverId = ref<string>('')
 		const collapsedNodes = ref(new Set<string>())
 
-		const { shouldHighlight, processHoveredNode } = useHighlightLinks(labelHoverId, collapsedNodes)
+		const {shouldHighlight, processHoveredNode} = useHighlightLinks(labelHoverId, collapsedNodes)
 
 		const nodeA = createNode('A')
 		const nodeB = createNode('B')
@@ -42,23 +42,23 @@ describe('useHighlightLinks', () => {
 		labelHoverId.value = 'A'
 		processHoveredNode(nodeA)
 
-		expect(shouldHighlight(linkAB, { trueValue: true, falseValue: false })).toBe(true)
+		expect(shouldHighlight(linkAB, {trueValue: true, falseValue: false})).toBe(true)
 
 		// Hover B
 		labelHoverId.value = 'B'
 		processHoveredNode(nodeB)
-		expect(shouldHighlight(linkAB, { trueValue: true, falseValue: false })).toBe(true)
+		expect(shouldHighlight(linkAB, {trueValue: true, falseValue: false})).toBe(true)
 
 		// Hover C (unrelated)
 		labelHoverId.value = 'C'
 		processHoveredNode(null)
-		expect(shouldHighlight(linkAB, { trueValue: true, falseValue: false })).toBe(false)
+		expect(shouldHighlight(linkAB, {trueValue: true, falseValue: false})).toBe(false)
 	})
 
 	it('propagates highlights upstream and downstream', () => {
 		const labelHoverId = ref<string>('')
 		const collapsedNodes = ref(new Set<string>())
-		const { shouldHighlight, processHoveredNode } = useHighlightLinks(labelHoverId, collapsedNodes)
+		const {shouldHighlight, processHoveredNode} = useHighlightLinks(labelHoverId, collapsedNodes)
 
 		// A -> B -> C
 		const nodeA = createNode('A')
@@ -87,14 +87,14 @@ describe('useHighlightLinks', () => {
 
 		// Let's re-read the logic in useHighlightLinks.ts carefully.
 
-		expect(shouldHighlight(linkAB, { trueValue: true, falseValue: false })).toBe(true)
-		expect(shouldHighlight(linkBC, { trueValue: true, falseValue: false })).toBe(true)
+		expect(shouldHighlight(linkAB, {trueValue: true, falseValue: false})).toBe(true)
+		expect(shouldHighlight(linkBC, {trueValue: true, falseValue: false})).toBe(true)
 	})
 
 	it('respects collapsed nodes', () => {
 		const labelHoverId = ref<string>('')
 		const collapsedNodes = ref(new Set<string>())
-		const { shouldHighlight, processHoveredNode } = useHighlightLinks(labelHoverId, collapsedNodes)
+		const {shouldHighlight, processHoveredNode} = useHighlightLinks(labelHoverId, collapsedNodes)
 
 		// A -> B -> C
 		const nodeA = createNode('A')
@@ -114,7 +114,7 @@ describe('useHighlightLinks', () => {
 		// Here A IS collapsed. So downstream (linkAB) might NOT be highlighted by the "downstream" logic?
 		// But "Direct connection" logic: link.source.id === labelHoverId -> true.
 		// So linkAB is highlighted because it directly connects to A.
-		expect(shouldHighlight(linkAB, { trueValue: true, falseValue: false })).toBe(true)
+		expect(shouldHighlight(linkAB, {trueValue: true, falseValue: false})).toBe(true)
 
 		// What about B->C?
 		// Since A is collapsed, we might expect propagation to stop?
@@ -128,6 +128,6 @@ describe('useHighlightLinks', () => {
 		// Here A is collapsed. So this block is SKIPPED.
 		// So B->C (linkBC) should NOT be highlighted.
 
-		expect(shouldHighlight(linkBC, { trueValue: true, falseValue: false })).toBe(false)
+		expect(shouldHighlight(linkBC, {trueValue: true, falseValue: false})).toBe(false)
 	})
 })

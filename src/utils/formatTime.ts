@@ -1,12 +1,12 @@
-import { utcDay, utcMonth, utcYear } from 'd3-time'
-import { utcFormat } from 'd3-time-format'
+import {utcDay, utcMonth, utcYear} from 'd3-time'
+import {utcFormat} from 'd3-time-format'
 
 const formatHour = utcFormat('%I %p')
 const formatDay = utcFormat('%b %d')
 const formatMonth = utcFormat('%b')
 const formatYear = utcFormat('%Y')
 
-export default function formatTime({ date }: { date: Date }) {
+export default function formatTime({date}: {date: Date}) {
 	if (utcDay(date) < date) {
 		return formatHour(date)
 	}
@@ -18,4 +18,3 @@ export default function formatTime({ date }: { date: Date }) {
 	}
 	return formatYear(date)
 }
-

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { constants } from '@/assets/constants'
-import { select } from 'd3-selection'
-import { transition } from 'd3-transition'
-import { computed, inject, ref, Ref, watchEffect } from 'vue'
+import {constants} from '@/assets/constants'
+import {select} from 'd3-selection'
+import {transition} from 'd3-transition'
+import {computed, inject, ref, Ref, watchEffect} from 'vue'
 
 const props = defineProps<{
 	pathD: string
@@ -35,9 +35,7 @@ watchEffect(() => {
 				const totalLength = (path.node() as SVGPathElement)?.getTotalLength() ?? 0
 
 				if (!isAnimated) {
-					return path
-						.attr('stroke-dasharray', null)
-						.attr('stroke-dashoffset', null)
+					return path.attr('stroke-dasharray', null).attr('stroke-dashoffset', null)
 				}
 
 				return path

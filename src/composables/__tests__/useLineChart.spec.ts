@@ -1,12 +1,12 @@
-import { describe, expect, it } from 'vitest'
-import { ref } from 'vue'
-import { useLineChart } from '../useLineChart'
+import {describe, expect, it} from 'vitest'
+import {ref} from 'vue'
+import {useLineChart} from '../useLineChart'
 
 describe('useLineChart', () => {
 	it('calculates scales and path correctly', () => {
 		const data = [
-			{ date: new Date('2023-01-01'), value: 10 },
-			{ date: new Date('2023-01-02'), value: 20 },
+			{date: new Date('2023-01-01'), value: 10},
+			{date: new Date('2023-01-02'), value: 20},
 		]
 		const props = ref({
 			data,
@@ -18,7 +18,7 @@ describe('useLineChart', () => {
 			marginRight: 10,
 		})
 
-		const { xScale, yScale, pathD, innerWidth, innerHeight } = useLineChart(props)
+		const {xScale, yScale, pathD, innerWidth, innerHeight} = useLineChart(props)
 
 		expect(innerWidth.value).toBe(80)
 		expect(innerHeight.value).toBe(80)
@@ -38,9 +38,9 @@ describe('useLineChart', () => {
 
 	it('rounds generated path coordinates to two decimals', () => {
 		const data = [
-			{ date: new Date('2023-01-01T00:00:00Z'), value: 10 },
-			{ date: new Date('2023-01-02T12:00:00Z'), value: 15 },
-			{ date: new Date('2023-01-04T00:00:00Z'), value: 20 },
+			{date: new Date('2023-01-01T00:00:00Z'), value: 10},
+			{date: new Date('2023-01-02T12:00:00Z'), value: 15},
+			{date: new Date('2023-01-04T00:00:00Z'), value: 20},
 		]
 		const props = ref({
 			data,
@@ -52,7 +52,7 @@ describe('useLineChart', () => {
 			marginRight: 5,
 		})
 
-		const { pathD } = useLineChart(props)
+		const {pathD} = useLineChart(props)
 
 		expect(pathD.value).toContain('M')
 		expect(pathD.value).not.toMatch(/\d+\.\d{3,}/)
@@ -69,7 +69,7 @@ describe('useLineChart', () => {
 			marginRight: 0,
 		})
 
-		const { pathD } = useLineChart(props)
+		const {pathD} = useLineChart(props)
 		expect(pathD.value).toBe('')
 	})
 })

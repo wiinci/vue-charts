@@ -1,6 +1,6 @@
-import { select } from 'd3-selection'
+import {select} from 'd3-selection'
 
-export default function yAxisPatterns({ node, width }: { node: SVGGElement; width: number }) {
+export default function yAxisPatterns({node, width}: {node: SVGGElement; width: number}) {
 	const selection = select(node)
 	selection.select('.domain').remove()
 

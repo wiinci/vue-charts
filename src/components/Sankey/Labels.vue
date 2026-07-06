@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { constants } from '@/assets/constants'
-import { SankeyNode } from '@/composables/useNodesAndLinks'
-import { getSankeyNodeKey } from '@/composables/sankeyModel'
-import { select } from 'd3-selection'
-import { transition } from 'd3-transition'
-import { computed, inject, ref, Ref, watchEffect } from 'vue'
+import {constants} from '@/assets/constants'
+import {SankeyNode} from '@/composables/useNodesAndLinks'
+import {getSankeyNodeKey} from '@/composables/sankeyModel'
+import {select} from 'd3-selection'
+import {transition} from 'd3-transition'
+import {computed, inject, ref, Ref, watchEffect} from 'vue'
 
 interface LabelProps {
 	data: SankeyNode[]
@@ -21,15 +21,13 @@ const animationsEnabled = inject<Ref<boolean>>('animationsEnabled', ref(true))
 const getNodeKey = (node: SankeyNode): string => getSankeyNodeKey(node, props.nodeId)
 
 // Memoize calculations for better performance
-const getTextAnchor = computed(() => (node: SankeyNode) =>
-	node.x < props.width / 2 ? 'start' : 'end',
+const getTextAnchor = computed(
+	() => (node: SankeyNode) => (node.x < props.width / 2 ? 'start' : 'end'),
 )
 
 const getXPosition = computed(() => (node: SankeyNode) => {
 	if (props.nodeWidth < 1) return node.x
-	return node.x < props.width / 2
-		? node.x + props.nodeWidth
-		: node.x + node.width - props.nodeWidth
+	return node.x < props.width / 2 ? node.x + props.nodeWidth : node.x + node.width - props.nodeWidth
 })
 
 const getYPosition = computed(() => (node: SankeyNode) => node.y + node.height / 2)

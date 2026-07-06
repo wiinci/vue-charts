@@ -34,7 +34,7 @@ Every complex visualization is composed of two primary agents:
 ```typescript
 export function useChartPlanner(props: ChartProps) {
 	// 1. Perception
-	const dimensions = computed(() => ({ w: props.width, h: props.height }))
+	const dimensions = computed(() => ({w: props.width, h: props.height}))
 
 	// 2. Reasoning (The Algorithm)
 	const layout = computed(() => {
@@ -43,7 +43,7 @@ export function useChartPlanner(props: ChartProps) {
 	})
 
 	// 3. Plan Output
-	return { nodes: layout.nodes, links: layout.links }
+	return {nodes: layout.nodes, links: layout.links}
 }
 ```
 

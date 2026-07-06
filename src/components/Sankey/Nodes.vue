@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { constants } from '@/assets/constants'
-import { SankeyNode } from '@/composables/useNodesAndLinks'
-import { getSankeyNodeKey } from '@/composables/sankeyModel'
-import { select } from 'd3-selection'
-import { transition } from 'd3-transition'
-import { inject, ref, Ref, watchEffect } from 'vue'
+import {constants} from '@/assets/constants'
+import {SankeyNode} from '@/composables/useNodesAndLinks'
+import {getSankeyNodeKey} from '@/composables/sankeyModel'
+import {select} from 'd3-selection'
+import {transition} from 'd3-transition'
+import {inject, ref, Ref, watchEffect} from 'vue'
 
 interface NodeProps {
 	data: SankeyNode[] // This will now be the already filtered nodes

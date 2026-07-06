@@ -1,6 +1,6 @@
 import vue from '@vitejs/plugin-vue'
-import { fileURLToPath } from 'url'
-import { defineConfig } from 'vitest/config'
+import {fileURLToPath} from 'url'
+import {defineConfig} from 'vitest/config'
 
 // https://vitejs.dev/config/
 export default defineConfig({

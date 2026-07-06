@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Delaunay as delaunay } from 'd3-delaunay'
-import { pointer, select } from 'd3-selection'
-import { computed, onUnmounted, type PropType, ref, watchEffect } from 'vue'
+import {Delaunay as delaunay} from 'd3-delaunay'
+import {pointer, select} from 'd3-selection'
+import {computed, onUnmounted, type PropType, ref, watchEffect} from 'vue'
 
 interface Datum {
 	id?: string
@@ -34,8 +34,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits<{
-	'move-to': [{ d: any }]
-	'node-click': [{ id: string }]
+	'move-to': [{d: any}]
+	'node-click': [{id: string}]
 }>()
 
 const voronoiRef = ref<SVGGElement | null>(null)
@@ -59,7 +59,7 @@ const emitNearest = (x: number, y: number, data: Datum[]) => {
 
 	const i = voronoi.value.find(x, y)
 	if (i !== undefined && i >= 0 && i < data.length) {
-		emit('move-to', { d: data[i] })
+		emit('move-to', {d: data[i]})
 	}
 }
 
@@ -94,7 +94,7 @@ const handleClick = (event: PointerEvent, data: Datum[]) => {
 	if (i !== undefined && i >= 0 && i < data.length) {
 		const id = data[i].id
 		if (typeof id === 'string') {
-			emit('node-click', { id })
+			emit('node-click', {id})
 		}
 	}
 }
@@ -102,7 +102,7 @@ const handleClick = (event: PointerEvent, data: Datum[]) => {
 const handlePointerLeave = () => {
 	pendingData = null
 	if (!props.data.length) return
-	emit('move-to', { d: props.data[props.data.length - 1] })
+	emit('move-to', {d: props.data[props.data.length - 1]})
 }
 
 onUnmounted(() => {

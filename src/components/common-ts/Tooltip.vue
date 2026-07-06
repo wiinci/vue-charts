@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { scaleBand } from 'd3-scale'
-import { computed, ref, watch } from 'vue'
+import {scaleBand} from 'd3-scale'
+import {computed, ref, watch} from 'vue'
 
 interface Datum {
 	date: Date
@@ -11,7 +11,7 @@ const props = defineProps<{
 	data: Datum[]
 	height: number
 	width: number
-	moveTo: { d: Datum }
+	moveTo: {d: Datum}
 }>()
 
 const x = computed(() =>

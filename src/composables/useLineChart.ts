@@ -1,8 +1,8 @@
-import { extent, max } from 'd3-array'
-import { scaleLinear, scaleUtc } from 'd3-scale'
-import { curveStep, line as lineFunc } from 'd3-shape'
-import { computed, Ref } from 'vue'
-import { optimizeSvgPath } from '@/utils'
+import {extent, max} from 'd3-array'
+import {scaleLinear, scaleUtc} from 'd3-scale'
+import {curveStep, line as lineFunc} from 'd3-shape'
+import {computed, Ref} from 'vue'
+import {optimizeSvgPath} from '@/utils'
 
 export interface LineChartDatum {
 	date: Date

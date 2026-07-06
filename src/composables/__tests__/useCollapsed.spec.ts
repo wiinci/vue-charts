@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import { computed, nextTick, ref } from 'vue'
-import { useCollapsed } from '../useCollapsed'
-import { SankeyLink, SankeyNode } from '../useNodesAndLinks'
+import {describe, expect, it} from 'vitest'
+import {computed, nextTick, ref} from 'vue'
+import {useCollapsed} from '../useCollapsed'
+import {SankeyLink, SankeyNode} from '../useNodesAndLinks'
 
 describe('useCollapsed', () => {
 	const getId = (node: SankeyLink['source'] | SankeyLink['target']) =>
@@ -30,8 +30,8 @@ describe('useCollapsed', () => {
 		const b = createNode('B', 1, 1)
 		const c = createNode('C', 2, 0)
 
-		const linkAB = { source: a, target: b, value: 1 } as unknown as SankeyLink
-		const linkBC = { source: b, target: c, value: 1 } as unknown as SankeyLink
+		const linkAB = {source: a, target: b, value: 1} as unknown as SankeyLink
+		const linkBC = {source: b, target: c, value: 1} as unknown as SankeyLink
 
 		a.sourceLinks = [linkAB]
 		b.targetLinks = [linkAB]
@@ -41,12 +41,12 @@ describe('useCollapsed', () => {
 		const nodes = ref([a, b, c])
 		const links = ref([linkAB, linkBC])
 
-		return { nodes, links, a, b, c, linkAB, linkBC }
+		return {nodes, links, a, b, c, linkAB, linkBC}
 	}
 
 	it('toggles collapse state', () => {
-		const { nodes, links } = setupSimpleChain()
-		const { collapsedNodes, toggleCollapse } = useCollapsed(
+		const {nodes, links} = setupSimpleChain()
+		const {collapsedNodes, toggleCollapse} = useCollapsed(
 			computed(() => nodes.value),
 			computed(() => links.value),
 		)
@@ -59,8 +59,8 @@ describe('useCollapsed', () => {
 	})
 
 	it('cascades collapse to downstream nodes', async () => {
-		const { nodes, links } = setupSimpleChain()
-		const { collapsedNodes, toggleCollapse, filteredNodes } = useCollapsed(
+		const {nodes, links} = setupSimpleChain()
+		const {collapsedNodes, toggleCollapse, filteredNodes} = useCollapsed(
 			computed(() => nodes.value),
 			computed(() => links.value),
 		)
@@ -102,8 +102,8 @@ describe('useCollapsed', () => {
 	})
 
 	it('uncollapses downstream when expanding', () => {
-		const { nodes, links } = setupSimpleChain()
-		const { collapsedNodes, toggleCollapse } = useCollapsed(
+		const {nodes, links} = setupSimpleChain()
+		const {collapsedNodes, toggleCollapse} = useCollapsed(
 			computed(() => nodes.value),
 			computed(() => links.value),
 		)
@@ -124,8 +124,8 @@ describe('useCollapsed', () => {
 		const b = createNode('B', 0, 1)
 		const c = createNode('C', 1, 0)
 
-		const linkAC = { source: a, target: c, value: 1 } as unknown as SankeyLink
-		const linkBC = { source: b, target: c, value: 1 } as unknown as SankeyLink
+		const linkAC = {source: a, target: c, value: 1} as unknown as SankeyLink
+		const linkBC = {source: b, target: c, value: 1} as unknown as SankeyLink
 
 		a.sourceLinks = [linkAC]
 		b.sourceLinks = [linkBC]
@@ -134,7 +134,7 @@ describe('useCollapsed', () => {
 		const nodes = ref([a, b, c])
 		const links = ref([linkAC, linkBC])
 
-		const { collapsedNodes, toggleCollapse, filteredNodes } = useCollapsed(
+		const {collapsedNodes, toggleCollapse, filteredNodes} = useCollapsed(
 			computed(() => nodes.value),
 			computed(() => links.value),
 		)
@@ -151,7 +151,7 @@ describe('useCollapsed', () => {
 	describe('Complex Scenarios', () => {
 		// Helper to quick link
 		const link = (source: SankeyNode, target: SankeyNode) => {
-			const l = { source, target, value: 1 } as unknown as SankeyLink
+			const l = {source, target, value: 1} as unknown as SankeyLink
 			source.sourceLinks!.push(l)
 			target.targetLinks!.push(l)
 			return l
@@ -171,7 +171,7 @@ describe('useCollapsed', () => {
 			const linksList = [link(k, l), link(k, o), link(l, m), link(o, m), link(m, n)]
 			const nodesList = [k, l, o, m, n]
 
-			const { collapsedNodes, toggleCollapse, filteredLinks } = useCollapsed(
+			const {collapsedNodes, toggleCollapse, filteredLinks} = useCollapsed(
 				computed(() => nodesList),
 				computed(() => linksList),
 			)
@@ -290,7 +290,7 @@ describe('useCollapsed', () => {
 			const linksList = [link(p, q), link(s, q), link(q, r)]
 			const nodesList = [p, s, q, r]
 
-			const { collapsedNodes, toggleCollapse, filteredLinks } = useCollapsed(
+			const {collapsedNodes, toggleCollapse, filteredLinks} = useCollapsed(
 				computed(() => nodesList),
 				computed(() => linksList),
 			)

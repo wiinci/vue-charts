@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { SankeyLink } from '@/composables/useNodesAndLinks'
+import type {SankeyLink} from '@/composables/useNodesAndLinks'
 import aaplCsvData from '@/data/aapl.csv?raw'
 import sankeyJsonData from '@/data/edges2.json'
 // import sankeyJsonData from '@/data/tables.json'
-import { defineAsyncComponent, onMounted, onUnmounted, provide, ref } from 'vue'
+import {defineAsyncComponent, onMounted, onUnmounted, provide, ref} from 'vue'
 
 const Sankey = defineAsyncComponent(() => import('./components/Sankey/Sankey.vue'))
 const LineChart = defineAsyncComponent(() => import('./components/LineChart/LineChart.vue'))
@@ -25,10 +25,13 @@ let animationRafB: number | null = null
 
 const runWhenIdle = (cb: () => void) => {
 	if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-		idleCallbackId = window.requestIdleCallback(() => {
-			idleCallbackId = null
-			cb()
-		}, { timeout: 250 })
+		idleCallbackId = window.requestIdleCallback(
+			() => {
+				idleCallbackId = null
+				cb()
+			},
+			{timeout: 250},
+		)
 		return
 	}
 

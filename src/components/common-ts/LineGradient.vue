@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ticks } from 'd3-array'
-import { scaleSequential } from 'd3-scale'
-import { interpolateCool } from 'd3-scale-chromatic'
-import { select } from 'd3-selection'
-import { computed, shallowRef, watchEffect } from 'vue'
+import {ticks} from 'd3-array'
+import {scaleSequential} from 'd3-scale'
+import {interpolateCool} from 'd3-scale-chromatic'
+import {select} from 'd3-selection'
+import {computed, shallowRef, watchEffect} from 'vue'
 
 const props = withDefaults(
 	defineProps<{

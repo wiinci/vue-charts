@@ -1,16 +1,16 @@
 import sankeyJsonData from '@/data/edges2.json'
-import { describe, expect, it } from 'vitest'
-import { reactive } from 'vue'
-import { SankeyLink, SankeyProps, useNodesAndLinks } from '../useNodesAndLinks'
+import {describe, expect, it} from 'vitest'
+import {reactive} from 'vue'
+import {SankeyLink, SankeyProps, useNodesAndLinks} from '../useNodesAndLinks'
 
 const getNodeId = (node: SankeyLink['source'] | SankeyLink['target']) =>
 	typeof node === 'object' ? node.id : String(node)
 
 describe('useNodesAndLinks', () => {
 	const mockData: SankeyLink[] = [
-		{ source: 'A', target: 'B', value: 10 },
-		{ source: 'B', target: 'C', value: 5 },
-		{ source: 'B', target: 'D', value: 5 },
+		{source: 'A', target: 'B', value: 10},
+		{source: 'B', target: 'C', value: 5},
+		{source: 'B', target: 'D', value: 5},
 	]
 
 	const defaultProps: SankeyProps = {
@@ -29,8 +29,8 @@ describe('useNodesAndLinks', () => {
 	}
 
 	it('computes chart dimensions correctly', () => {
-		const props = reactive({ ...defaultProps })
-		const { chartWidth, chartHeight } = useNodesAndLinks(props)
+		const props = reactive({...defaultProps})
+		const {chartWidth, chartHeight} = useNodesAndLinks(props)
 
 		expect(chartWidth.value).toBe(800 - 10 - 10) // 780
 		expect(chartHeight.value).toBe(600 - 10 - 10) // 580
@@ -41,8 +41,8 @@ describe('useNodesAndLinks', () => {
 	})
 
 	it('generates nodes and links structure', () => {
-		const props = reactive({ ...defaultProps })
-		const { nodes, links } = useNodesAndLinks(props)
+		const props = reactive({...defaultProps})
+		const {nodes, links} = useNodesAndLinks(props)
 
 		// Nodes should be created for A, B, C, D
 		expect(nodes.value.length).toBe(4)
@@ -55,12 +55,12 @@ describe('useNodesAndLinks', () => {
 	})
 
 	it('reacts to data changes', () => {
-		const props = reactive({ ...defaultProps })
-		const { nodes } = useNodesAndLinks(props)
+		const props = reactive({...defaultProps})
+		const {nodes} = useNodesAndLinks(props)
 
 		expect(nodes.value.length).toBe(4)
 
-		const newData = [{ source: 'X', target: 'Y', value: 20 }]
+		const newData = [{source: 'X', target: 'Y', value: 20}]
 		props.data = newData
 
 		expect(nodes.value.length).toBe(2)
@@ -68,7 +68,7 @@ describe('useNodesAndLinks', () => {
 
 	it('preserves current app sankey geometry values', () => {
 		const props = reactive<SankeyProps>({
-			data: sankeyJsonData.map((item) => ({ ...item, value: 1 })) as SankeyLink[],
+			data: sankeyJsonData.map((item) => ({...item, value: 1})) as SankeyLink[],
 			height: 480,
 			width: 960,
 			marginLeft: 20,
@@ -82,7 +82,7 @@ describe('useNodesAndLinks', () => {
 			sort: false,
 		})
 
-		const { nodes, links } = useNodesAndLinks(props)
+		const {nodes, links} = useNodesAndLinks(props)
 
 		expect(nodes.value).toHaveLength(49)
 		expect(links.value).toHaveLength(41)
@@ -96,15 +96,17 @@ describe('useNodesAndLinks', () => {
 		expect(uniqueNodeWidths[0]).toBeCloseTo(9.999894245993346e-10, 20)
 		expect(uniqueNodeWidths[1]).toBeCloseTo(1.000000082740371e-9, 20)
 
-		expect(nodes.value.slice(0, 3).map((node) => ({
-			id: node.id,
-			x0: node.x0,
-			x1: node.x1,
-			y0: node.y0,
-			y1: node.y1,
-			width: node.width,
-			height: node.height,
-		}))).toEqual([
+		expect(
+			nodes.value.slice(0, 3).map((node) => ({
+				id: node.id,
+				x0: node.x0,
+				x1: node.x1,
+				y0: node.y0,
+				y1: node.y1,
+				width: node.width,
+				height: node.height,
+			})),
+		).toEqual([
 			{
 				id: 'n9::n3',
 				x0: 20,
@@ -134,13 +136,15 @@ describe('useNodesAndLinks', () => {
 			},
 		])
 
-		expect(links.value.slice(0, 3).map((link) => ({
-			source: getNodeId(link.source),
-			target: getNodeId(link.target),
-			width: link.width,
-			y0: link.y0,
-			y1: link.y1,
-		}))).toEqual([
+		expect(
+			links.value.slice(0, 3).map((link) => ({
+				source: getNodeId(link.source),
+				target: getNodeId(link.target),
+				width: link.width,
+				y0: link.y0,
+				y1: link.y1,
+			})),
+		).toEqual([
 			{
 				source: 'n9::n3',
 				target: 'n10::n3',

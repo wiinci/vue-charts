@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import Chart from '@/components/common-ts/Chart.vue'
 import Voronoi from '@/components/common-ts/Voronoi.vue'
-import { useCollapsed } from '@/composables/useCollapsed'
-import {
-	SankeyLink,
-	SankeyNode,
-	useNodesAndLinks,
-} from '@/composables/useNodesAndLinks'
+import {useCollapsed} from '@/composables/useCollapsed'
+import {SankeyLink, SankeyNode, useNodesAndLinks} from '@/composables/useNodesAndLinks'
 // } from '@/hooks/useNodesAndLinks2'
-import { computed, onUnmounted, provide, ref } from 'vue'
+import {computed, onUnmounted, provide, ref} from 'vue'
 import Labels from './Labels.vue'
 import Links from './Links.vue'
 import Nodes from './Nodes.vue'
@@ -44,7 +40,7 @@ const props = withDefaults(
 )
 
 // Use the refactored composables
-const { chartWidth, nodes, links } = useNodesAndLinks(props)
+const {chartWidth, nodes, links} = useNodesAndLinks(props)
 
 // Reactive state for highlight functionality
 const labelDatum = ref<SankeyNode | null>(null)
@@ -59,20 +55,17 @@ const xAccessor = computed(() => (d: SankeyNode) => d.x)
 const yAccessor = computed(() => (d: SankeyNode) => d.y)
 
 // Use collapsed composable
-const { collapsedNodes, filteredNodes, filteredLinks, toggleCollapse } = useCollapsed(
-	nodes,
-	links,
-)
+const {collapsedNodes, filteredNodes, filteredLinks, toggleCollapse} = useCollapsed(nodes, links)
 
 /**
  * Handle node click event - delegates to the toggleCollapse function
  */
-const handleNodeClick = ({ id }: { id: string }) => toggleCollapse(id)
+const handleNodeClick = ({id}: {id: string}) => toggleCollapse(id)
 
 /**
  * Update highlight state based on hovered node
  */
-function highlightLinks({ d }: { d: SankeyNode }) {
+function highlightLinks({d}: {d: SankeyNode}) {
 	const nextId = d && typeof d === 'object' ? (d.id ?? '') : ''
 	if (nextId === labelId.value) return
 
@@ -89,11 +82,7 @@ onUnmounted(() => {
 <template>
 	<Chart :height="height" :marginLeft="0" :marginTop="0" :width="width">
 		<Links :data="filteredLinks" :collapsedNodes="collapsedNodes" />
-		<Nodes
-			:data="filteredNodes"
-			:nodeId="nodeId"
-			@click="toggleCollapse"
-		/>
+		<Nodes :data="filteredNodes" :nodeId="nodeId" @click="toggleCollapse" />
 		<Labels
 			:data="filteredNodes"
 			:collapsedNodes="collapsedNodes"

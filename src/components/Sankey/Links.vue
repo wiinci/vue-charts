@@ -1,21 +1,15 @@
 <script setup lang="ts">
-import { constants } from '@/assets/constants'
-import { useHighlightLinks } from '@/composables/useHighlightLinks'
-import {
-	SankeyLink,
-	SankeyNode,
-} from '@/composables/useNodesAndLinks'
-import {
-	SankeyLinkDatum,
-	SankeyNodeDatum,
-} from '@/composables/sankeyModel'
-import { getLinkSourceId, getLinkTargetId } from '@/composables/sankeyTraversal'
-import { optimizeSvgPath } from '@/utils'
-import { sankeyLinkHorizontal } from 'd3-sankey'
-import { select } from 'd3-selection'
-import { linkHorizontal } from 'd3-shape'
-import { transition } from 'd3-transition'
-import { computed, inject, ref, Ref, watch, watchEffect } from 'vue'
+import {constants} from '@/assets/constants'
+import {useHighlightLinks} from '@/composables/useHighlightLinks'
+import {SankeyLink, SankeyNode} from '@/composables/useNodesAndLinks'
+import {SankeyLinkDatum, SankeyNodeDatum} from '@/composables/sankeyModel'
+import {getLinkSourceId, getLinkTargetId} from '@/composables/sankeyTraversal'
+import {optimizeSvgPath} from '@/utils'
+import {sankeyLinkHorizontal} from 'd3-sankey'
+import {select} from 'd3-selection'
+import {linkHorizontal} from 'd3-shape'
+import {transition} from 'd3-transition'
+import {computed, inject, ref, Ref, watch, watchEffect} from 'vue'
 
 const props = defineProps<{
 	data: SankeyLink[]
@@ -51,7 +45,7 @@ const labelHoverId = inject<Ref<string>>('labelId', ref(''))
 const animationsEnabled = inject<Ref<boolean>>('animationsEnabled', ref(true))
 
 // Use the highlight links composable
-const { shouldHighlight, processHoveredNode } = useHighlightLinks(
+const {shouldHighlight, processHoveredNode} = useHighlightLinks(
 	labelHoverId,
 	computed(() => props.collapsedNodes),
 )
@@ -69,7 +63,7 @@ watch(
 
 		processHoveredNode(null)
 	},
-	{ immediate: true },
+	{immediate: true},
 )
 
 watchEffect(() => {
@@ -109,13 +103,11 @@ watchEffect(() => {
 					}),
 			(update) => {
 				const base = update
-					.classed(
-						'raise',
-						(link) =>
-							shouldHighlight(link, {
-								trueValue: true,
-								falseValue: false,
-							}),
+					.classed('raise', (link) =>
+						shouldHighlight(link, {
+							trueValue: true,
+							falseValue: false,
+						}),
 					)
 					.attr('stroke', (link) =>
 						shouldHighlight(link, {

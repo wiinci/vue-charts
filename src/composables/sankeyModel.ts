@@ -1,7 +1,4 @@
-import type {
-	SankeyLink as D3SankeyLink,
-	SankeyNode as D3SankeyNode,
-} from 'd3-sankey'
+import type {SankeyLink as D3SankeyLink, SankeyNode as D3SankeyNode} from 'd3-sankey'
 
 export interface SankeyNodeDatum {
 	id: string

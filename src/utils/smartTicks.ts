@@ -1,4 +1,4 @@
-import type { ScaleLinear } from 'd3-scale'
+import type {ScaleLinear} from 'd3-scale'
 
 export default function smartTicks(y: ScaleLinear<number, number, never>): number {
 	const max = y.invert(0)

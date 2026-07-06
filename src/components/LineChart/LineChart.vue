@@ -5,11 +5,11 @@ import Gradient from '@/components/common-ts/LineGradient.vue'
 import Tooltip from '@/components/common-ts/Tooltip.vue'
 import Voronoi from '@/components/common-ts/Voronoi.vue'
 import Line from '@/components/LineChart/Line.vue'
-import { useLineChart, type LineChartDatum } from '@/composables/useLineChart'
-import { ascending } from 'd3-array'
-import { csvParse } from 'd3-dsv'
-import { timeParse } from 'd3-time-format'
-import { computed, ref, shallowRef, watch } from 'vue'
+import {useLineChart, type LineChartDatum} from '@/composables/useLineChart'
+import {ascending} from 'd3-array'
+import {csvParse} from 'd3-dsv'
+import {timeParse} from 'd3-time-format'
+import {computed, ref, shallowRef, watch} from 'vue'
 
 const {
 	data,
@@ -46,7 +46,7 @@ watch(
 			parsed.value = str
 		}
 	},
-	{ immediate: true },
+	{immediate: true},
 )
 const cdata = computed(() => parsed.value)
 
@@ -61,7 +61,7 @@ const chartProps = computed(() => ({
 	marginRight,
 }))
 
-const { pathD, xScale, yScale, innerWidth, innerHeight } = useLineChart(chartProps)
+const {pathD, xScale, yScale, innerWidth, innerHeight} = useLineChart(chartProps)
 
 // Initialize with a default datum to satisfy the type requirements
 const defaultDatum: LineChartDatum = {
@@ -69,9 +69,9 @@ const defaultDatum: LineChartDatum = {
 	value: 0,
 }
 
-const moveTo = ref<{ d: LineChartDatum }>({ d: defaultDatum })
-const handleMoveTo = ({ d }: { d: LineChartDatum }) => {
-	moveTo.value = { d }
+const moveTo = ref<{d: LineChartDatum}>({d: defaultDatum})
+const handleMoveTo = ({d}: {d: LineChartDatum}) => {
+	moveTo.value = {d}
 }
 
 const xAccessor = (d: LineChartDatum) => xScale.value(d.date)

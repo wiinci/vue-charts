@@ -19,7 +19,7 @@ declare module '*.json' {
 
 // Vue file types
 declare module '*.vue' {
-	import type { DefineComponent } from 'vue'
+	import type {DefineComponent} from 'vue'
 	const component: DefineComponent<{}, {}, any>
 	export default component
 }
