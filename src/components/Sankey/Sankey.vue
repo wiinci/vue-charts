@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import Chart from '@/components/common-ts/Chart.vue'
-import Voronoi from '@/components/common-ts/Voronoi.vue'
 import {useCollapsed} from '@/composables/useCollapsed'
+import {useInteractionStateMachine} from '@/composables/useInteractionStateMachine'
 import {SankeyLink, SankeyNode, useNodesAndLinks} from '@/composables/useNodesAndLinks'
-// } from '@/hooks/useNodesAndLinks2'
-import {computed, onUnmounted, provide, ref} from 'vue'
+import {useQuadtree} from '@/composables/useQuadtree'
+import {pointer} from 'd3-selection'
+import {computed, onUnmounted, provide} from 'vue'
 import Labels from './Labels.vue'
 import Links from './Links.vue'
 import Nodes from './Nodes.vue'
@@ -39,50 +40,91 @@ const props = withDefaults(
 	},
 )
 
-// Use the refactored composables
+// Layout composable
 const {chartWidth, nodes, links} = useNodesAndLinks(props)
 
-// Reactive state for highlight functionality
-const labelDatum = ref<SankeyNode | null>(null)
-const labelId = ref<string>('')
+// Collapsed node filtering composable
+const {collapsedNodes, filteredNodes, filteredLinks, toggleCollapse} = useCollapsed(nodes, links)
 
-// Expose data to child components via provide/inject
+// Interaction finite state machine
+const fsm = useInteractionStateMachine()
+
+// Quadtree spatial index for node hit-testing with radius threshold
+const {find: findQuadtreeNode} = useQuadtree(filteredNodes, {
+	xAccessor: (d: SankeyNode) => (d.x ?? 0) + (d.width ?? 0) / 2,
+	yAccessor: (d: SankeyNode) => (d.y ?? 0) + (d.height ?? 0) / 2,
+	radiusThreshold: 60,
+})
+
+// Derive hover/selection state for child components
+const labelId = computed(() => fsm.hoveredNodeId.value || fsm.selectedNodeId.value || '')
+const labelDatum = computed(() => {
+	if (!labelId.value) return null
+	return filteredNodes.value.find((n) => (n.id ?? '') === labelId.value) || null
+})
+
+// Expose data to child components via provide/inject for backwards compatibility
 provide('labelDatum', labelDatum)
 provide('labelId', labelId)
 
-// Accessors for node positions
-const xAccessor = computed(() => (d: SankeyNode) => d.x)
-const yAccessor = computed(() => (d: SankeyNode) => d.y)
-
-// Use collapsed composable
-const {collapsedNodes, filteredNodes, filteredLinks, toggleCollapse} = useCollapsed(nodes, links)
+/**
+ * Handle node click event - delegates to toggleCollapse
+ */
+const handleNodeClick = (id: string) => {
+	toggleCollapse(id)
+}
 
 /**
- * Handle node click event - delegates to the toggleCollapse function
+ * Quadtree pointermove handler: tests cursor against spatial index
  */
-const handleNodeClick = ({id}: {id: string}) => toggleCollapse(id)
+const handlePointerMove = (event: MouseEvent) => {
+	const [x, y] = pointer(event)
+	const targetNode = findQuadtreeNode(x, y)
+	if (targetNode && targetNode.id) {
+		fsm.pointerEnterNode(targetNode.id)
+	} else if (fsm.hoveredNodeId.value) {
+		fsm.pointerLeaveNode(fsm.hoveredNodeId.value)
+	}
+}
 
 /**
- * Update highlight state based on hovered node
+ * Quadtree click handler: handles node clicks vs empty space background clicks
  */
-function highlightLinks({d}: {d: SankeyNode}) {
-	const nextId = d && typeof d === 'object' ? (d.id ?? '') : ''
-	if (nextId === labelId.value) return
+const handleCanvasClick = (event: MouseEvent) => {
+	const [x, y] = pointer(event)
+	const targetNode = findQuadtreeNode(x, y)
+	if (targetNode && targetNode.id) {
+		handleNodeClick(targetNode.id)
+	} else {
+		// Empty space click clears selection
+		fsm.pointerDownBackground({x, y})
+		fsm.pointerUp()
+	}
+}
 
-	labelId.value = nextId
-	labelDatum.value = nextId ? d : null
+const handlePointerLeave = () => {
+	if (fsm.hoveredNodeId.value) {
+		fsm.pointerLeaveNode(fsm.hoveredNodeId.value)
+	}
 }
 
 onUnmounted(() => {
-	labelId.value = ''
-	labelDatum.value = null
+	fsm.reset()
 })
 </script>
 
 <template>
 	<Chart :height="height" :marginLeft="0" :marginTop="0" :width="width">
 		<Links :data="filteredLinks" :collapsedNodes="collapsedNodes" />
-		<Nodes :data="filteredNodes" :nodeId="nodeId" @click="toggleCollapse" />
+		<Nodes
+			:data="filteredNodes"
+			:nodeId="nodeId"
+			:hoveredNodeId="fsm.hoveredNodeId.value"
+			:selectedNodeId="fsm.selectedNodeId.value"
+			@click="handleNodeClick"
+			@hover="(id) => fsm.pointerEnterNode(id)"
+			@leave="(id) => fsm.pointerLeaveNode(id)"
+		/>
 		<Labels
 			:data="filteredNodes"
 			:collapsedNodes="collapsedNodes"
@@ -90,15 +132,16 @@ onUnmounted(() => {
 			:node-width="nodeWidth"
 			:width="chartWidth"
 		/>
-		<Voronoi
-			:classKey="'sankey'"
-			:data="filteredNodes"
-			:height="height"
+		<!-- Quadtree Spatial Hit Overlay (Replaces Voronoi Delaunay tessellation) -->
+		<rect
+			class="quadtree-hit-overlay"
 			:width="width"
-			:xAccessor="xAccessor"
-			:yAccessor="yAccessor"
-			@move-to="highlightLinks"
-			@node-click="handleNodeClick"
+			:height="height"
+			fill="none"
+			pointer-events="all"
+			@pointermove="handlePointerMove"
+			@pointerleave="handlePointerLeave"
+			@click="handleCanvasClick"
 		/>
 	</Chart>
 </template>
