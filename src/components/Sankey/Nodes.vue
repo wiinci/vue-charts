@@ -2,81 +2,102 @@
 import {constants} from '@/assets/constants'
 import {SankeyNode} from '@/composables/useNodesAndLinks'
 import {getSankeyNodeKey} from '@/composables/sankeyModel'
-import {select} from 'd3-selection'
-import {transition} from 'd3-transition'
-import {inject, ref, Ref, watchEffect} from 'vue'
+import {inject, ref, Ref} from 'vue'
 
 interface NodeProps {
-	data: SankeyNode[] // This will now be the already filtered nodes
+	data: SankeyNode[]
 	nodeId: string
+	hoveredNodeId?: string | null
+	selectedNodeId?: string | null
 }
 
-const props = defineProps<NodeProps>()
+const props = withDefaults(defineProps<NodeProps>(), {
+	hoveredNodeId: null,
+	selectedNodeId: null,
+})
 
 const emit = defineEmits<{
 	(e: 'click', id: string): void
+	(e: 'hover', id: string): void
+	(e: 'leave', id: string): void
+	(e: 'pointerdown', id: string, event: PointerEvent): void
 }>()
 
-const nodeRef = ref<SVGGElement | null>(null)
 const animationsEnabled = inject<Ref<boolean>>('animationsEnabled', ref(true))
 
 const getNodeKey = (node: SankeyNode): string => getSankeyNodeKey(node, props.nodeId)
 
-// Reactively update when dependencies change
-watchEffect(() => {
-	if (!nodeRef.value) return
+const handleKeydown = (event: KeyboardEvent, node: SankeyNode) => {
+	if (event.key === 'Enter' || event.key === ' ') {
+		event.preventDefault()
+		emit('click', getNodeKey(node))
+	}
+}
 
-	const isAnimated = animationsEnabled.value
-	const tfast = transition().duration(constants.duration.fast)
-
-	select(nodeRef.value)
-		.selectAll<SVGRectElement, SankeyNode>('rect')
-		.data(props.data, getNodeKey)
-		.join(
-			(enter) =>
-				enter
-					.append('rect')
-					.attr('fill', constants.nodeColor)
-					.attr('height', (node) => node.height)
-					.attr('width', (node) => node.width)
-					.attr('x', (node) => node.x)
-					.attr('y', (node) => node.y)
-					.attr('opacity', isAnimated ? 0 : 1)
-					.on('click', (_, node) => emit('click', getNodeKey(node)))
-					.call((selection) => {
-						if (!isAnimated) return
-
-						selection
-							.transition(tfast)
-							.delay((node) => constants.duration.medium * ((node.depth || 0) + 1))
-							.attr('opacity', 1)
-					}),
-			(update) => {
-				const base = update
-					.attr('height', (node) => node.height)
-					.attr('width', (node) => node.width)
-					.attr('x', (node) => node.x)
-					.attr('y', (node) => node.y)
-					.attr('opacity', 1)
-
-				if (!isAnimated) {
-					return base
-				}
-
-				return base.transition(tfast)
-			},
-			(exit) => {
-				if (!isAnimated) {
-					exit.remove()
-					return
-				}
-
-				exit.transition(tfast).attr('opacity', 0).remove()
-			},
-		)
-})
+const isHighlighted = (node: SankeyNode): boolean => {
+	const key = getNodeKey(node)
+	return props.hoveredNodeId === key || props.selectedNodeId === key
+}
 </script>
 
 <template>
-	<g class="nodes" ref="nodeRef" />
+	<g class="nodes" role="group" aria-label="Sankey Nodes">
+		<rect
+			v-for="node in data"
+			:key="getNodeKey(node)"
+			class="sankey-node"
+			:class="{
+				'sankey-node--highlighted': isHighlighted(node),
+				'sankey-node--selected': selectedNodeId === getNodeKey(node),
+				'sankey-node--animated': animationsEnabled,
+			}"
+			:x="node.x"
+			:y="node.y"
+			:width="node.width"
+			:height="node.height"
+			:fill="constants.nodeColor"
+			:opacity="isHighlighted(node) ? 1 : 0.85"
+			role="button"
+			tabindex="0"
+			:aria-label="`Node ${getNodeKey(node)}`"
+			@click="emit('click', getNodeKey(node))"
+			@pointerenter="emit('hover', getNodeKey(node))"
+			@pointerleave="emit('leave', getNodeKey(node))"
+			@pointerdown="(e) => emit('pointerdown', getNodeKey(node), e)"
+			@keydown="(e) => handleKeydown(e, node)"
+		/>
+	</g>
 </template>
+
+<style scoped>
+.sankey-node {
+	cursor: pointer;
+	outline: none;
+	rx: 2px;
+	ry: 2px;
+}
+
+.sankey-node--animated {
+	transition:
+		x 0.2s ease,
+		y 0.2s ease,
+		width 0.2s ease,
+		height 0.2s ease,
+		opacity 0.2s ease,
+		fill 0.2s ease;
+}
+
+.sankey-node:focus-visible {
+	stroke: #4f46e5;
+	stroke-width: 2px;
+}
+
+.sankey-node--highlighted {
+	opacity: 1;
+}
+
+.sankey-node--selected {
+	stroke: #2563eb;
+	stroke-width: 2px;
+}
+</style>
