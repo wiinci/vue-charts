@@ -9,15 +9,18 @@ interface NodeProps {
 	nodeId: string
 	hoveredNodeId?: string | null
 	selectedNodeId?: string | null
+	isDragging?: boolean
 }
 
 const props = withDefaults(defineProps<NodeProps>(), {
 	hoveredNodeId: null,
 	selectedNodeId: null,
+	isDragging: false,
 })
 
 const emit = defineEmits<{
 	(e: 'click', id: string): void
+	(e: 'dblclick', id: string): void
 	(e: 'hover', id: string): void
 	(e: 'leave', id: string): void
 	(e: 'pointerdown', id: string, event: PointerEvent): void
@@ -49,7 +52,8 @@ const isHighlighted = (node: SankeyNode): boolean => {
 			:class="{
 				'sankey-node--highlighted': isHighlighted(node),
 				'sankey-node--selected': selectedNodeId === getNodeKey(node),
-				'sankey-node--animated': animationsEnabled,
+				'sankey-node--dragging': isDragging && selectedNodeId === getNodeKey(node),
+				'sankey-node--animated': animationsEnabled && !isDragging,
 			}"
 			:x="node.x"
 			:y="node.y"
@@ -61,6 +65,7 @@ const isHighlighted = (node: SankeyNode): boolean => {
 			tabindex="0"
 			:aria-label="`Node ${getNodeKey(node)}`"
 			@click="emit('click', getNodeKey(node))"
+			@dblclick="emit('dblclick', getNodeKey(node))"
 			@pointerenter="emit('hover', getNodeKey(node))"
 			@pointerleave="emit('leave', getNodeKey(node))"
 			@pointerdown="(e) => emit('pointerdown', getNodeKey(node), e)"
@@ -71,10 +76,14 @@ const isHighlighted = (node: SankeyNode): boolean => {
 
 <style scoped>
 .sankey-node {
-	cursor: pointer;
+	cursor: grab;
 	outline: none;
 	rx: 2px;
 	ry: 2px;
+}
+
+.sankey-node--dragging {
+	cursor: grabbing;
 }
 
 .sankey-node--animated {

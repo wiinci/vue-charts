@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed} from 'vue'
+import {computed, ref} from 'vue'
 
 const props = withDefaults(
 	defineProps<{
@@ -9,6 +9,7 @@ const props = withDefaults(
 		marginRight?: number
 		marginTop?: number
 		width?: number
+		zoomTransform?: string
 	}>(),
 	{
 		height: 480,
@@ -17,16 +18,26 @@ const props = withDefaults(
 		marginRight: 20,
 		marginTop: 50,
 		width: 960,
+		zoomTransform: '',
 	},
 )
 
+const svgRef = ref<SVGSVGElement | null>(null)
 const viewBox = computed(() => `0 0 ${props.width} ${props.height}`)
-const transform = computed(() => `translate(${props.marginLeft}, ${props.marginTop})`)
+const transform = computed(() => {
+	const base = `translate(${props.marginLeft}, ${props.marginTop})`
+	return props.zoomTransform ? `${base} ${props.zoomTransform}` : base
+})
+
+defineExpose({
+	svgRef,
+})
 </script>
 
 <template>
 	<div :class="$style.chart" class="chart">
 		<svg
+			ref="svgRef"
 			:viewBox="viewBox"
 			height="100%"
 			preserveAspectRatio="xMinYMin"
