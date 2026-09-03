@@ -259,6 +259,7 @@ onBeforeUnmount(() => {
 }
 
 .sc-overlay .sc-label {
+	position: absolute;
 	pointer-events: auto;
 }
 
