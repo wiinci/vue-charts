@@ -1,4 +1,5 @@
 import {sankeyLinkHorizontal} from 'd3-sankey'
+import {linkHorizontal} from 'd3-shape'
 import {computed, ref, type ComputedRef, type Ref} from 'vue'
 import optimizeSvgPath from '@/utils/optimizeSvgPath'
 import {type SankeyLink, type SankeyNodeDatum, getSankeyNodeKey} from './sankeyModel'
@@ -11,12 +12,17 @@ import {
 	getLinkTargetNode,
 } from './sankeyTraversal'
 import {useHighlightLinks} from './useHighlightLinks'
+import {useCollapsed} from './useCollapsed'
 
 export interface SceneLink {
 	/** `${sourceId}-${targetId}` — the same key Links.vue joins on */
 	key: string
 	/** SVG path data from sankeyLinkHorizontal(); the executor wraps it in a Path2D */
 	path: string
+	/** Flat line at the source node — the entrance animation's first frame (Links.vue's initialLinkAccessor) */
+	initialPath: string
+	/** The source node's layout depth — drives the SVG's animation delay curve (Links.vue's getLinkDepth) */
+	depth: number
 	/** Exactly useHighlightLinks.shouldHighlight — the SVG's rule */
 	emphasized: boolean
 }
@@ -32,6 +38,8 @@ export interface SceneLabel {
 	fx: number
 	/** y / height — overlay mode positions with percentages of the frame */
 	fy: number
+	/** The node's layout depth — drives the SVG's animation delay curve (Labels.vue) */
+	depth: number
 	/** Labels.vue rule: the anchor flips at the chart-width midline */
 	anchor: 'start' | 'end'
 	/**
@@ -52,10 +60,10 @@ export interface SankeyCanvasScene {
 
 export interface SankeyCanvasSceneOptions {
 	/**
-	 * Collapsed node ids; PR3 wires the SVG's `useCollapsed` state here. Treated
-	 * as a post-layout scene filter — hidden links/labels are omitted and every
-	 * other item keeps its exact geometry — never a layout recompute, matching
-	 * the SVG's collapse behaviour.
+	 * Overrides the planner's own collapse state (the SVG's `useCollapsed`,
+	 * instantiated by default). Always treated as a post-layout scene filter —
+	 * hidden links/labels are omitted and every other item keeps its exact
+	 * geometry — never a layout recompute, matching the SVG's collapse.
 	 */
 	collapsedNodes?: Ref<Set<string>>
 }
@@ -64,6 +72,13 @@ export interface SankeyCanvasSceneResult {
 	scene: ComputedRef<SankeyCanvasScene>
 	setHovered: (id: string) => void
 	clearHovered: () => void
+	/**
+	 * The SVG's own `useCollapsed().toggleCollapse` when the planner owns the
+	 * collapse state (no `collapsedNodes` option). Null when the caller supplied
+	 * their own set — a toggle mutating state the planner doesn't filter by
+	 * would silently do nothing.
+	 */
+	toggleCollapse: ((nodeOrId: string | SankeyNode) => void) | null
 }
 
 /**
@@ -107,13 +122,33 @@ export function useSankeyCanvasScene(
 	props: SankeyProps,
 	options: SankeyCanvasSceneOptions = {},
 ): SankeyCanvasSceneResult {
-	const collapsedNodes = options.collapsedNodes ?? ref(new Set<string>())
 	const hoveredId = ref('')
 
 	const {nodes, links} = useNodesAndLinks(props)
+
+	// Collapse state is the SVG's own useCollapsed composable, driven by
+	// toggleCollapse and filtered post-layout below. A caller-supplied set
+	// (tests, alternate wirings) replaces it — those callers filter scenes
+	// without toggling.
+	const collapse = options.collapsedNodes
+		? {collapsedNodes: options.collapsedNodes, toggleCollapse: null}
+		: useCollapsed(nodes, links)
+	const collapsedNodes = collapse.collapsedNodes
+
 	const {sourceIds, targetIds, shouldHighlight, processHoveredNode} = useHighlightLinks(hoveredId, collapsedNodes)
 
 	const pathOf = sankeyLinkHorizontal<SankeyNodeDatum, SankeyLink>()
+	// Links.vue:27-36 — linkHorizontal with both generator endpoints at the
+	// source node's [x0, y0]: the flat line every entrance sweep starts from
+	const initialGenerator = linkHorizontal<SankeyLinkLayout, [number, number]>()
+		.source((link) => {
+			const source = link.source as SankeyNode
+			return [source.x0 ?? 0, source.y0 ?? 0]
+		})
+		.target((link) => {
+			const source = link.source as SankeyNode
+			return [source.x0 ?? 0, source.y0 ?? 0]
+		})
 	const lookup = computed(() => createNodeLookup(nodes.value))
 
 	function setHovered(id: string) {
@@ -163,6 +198,8 @@ export function useSankeyCanvasScene(
 					key: `${getLinkSourceId(link)}-${getLinkTargetId(link)}`,
 					// Same 2-decimal rounding the SVG renders (Links.vue)
 					path: optimizeSvgPath(pathOf(link) ?? ''),
+					initialPath: optimizeSvgPath(initialGenerator(link) ?? ''),
+					depth: (link.source as SankeyNode).depth || 0,
 					emphasized: shouldHighlight(link, {trueValue: true, falseValue: false}),
 				}))
 				// Stable sort: rest links keep layout order, emphasized go last,
@@ -179,11 +216,13 @@ export function useSankeyCanvasScene(
 					fx: node.x / props.width,
 					fy: y / props.height,
 					anchor: node.x < chartMidline ? 'start' : 'end',
+					// Labels.vue's (d.depth || 0)
+					depth: node.depth || 0,
 					state: !isHovering ? 'rest' : activeIds.has(key) ? 'active' : 'muted',
 				}
 			}),
 		}
 	})
 
-	return {scene, setHovered, clearHovered}
+	return {scene, setHovered, clearHovered, toggleCollapse: collapse.toggleCollapse}
 }
