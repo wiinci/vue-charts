@@ -1,0 +1,15 @@
+# .obvious/config.yml — repo policy for Obvious agents.
+# Auto-detected from GitHub repo settings on 2026-09-03.
+
+# Default branch for pull requests.
+defaultBranch: main
+
+# Merge method for automation PRs. This repo allows merge commits, squash,
+# and rebase; squash is used to keep automation commits clean.
+mergeMethod: squash
+
+# Delete the PR head branch after merge (matches repo setting).
+deleteBranchOnMerge: true
+
+# A human must approve before automation merges to the default branch.
+requireHumanApproval: true
