@@ -48,4 +48,27 @@ describe('router', () => {
 
 		wrapper.unmount()
 	})
+	it('resolves /sankey to the sankey route', () => {
+		expect(router.resolve('/sankey').name).toBe('sankey')
+	})
+
+	it('renders the canvas Sankey alone at /sankey', async () => {
+		await router.push('/sankey')
+		await router.isReady()
+
+		expect(document.title).toBe('Sankey — vue-charts')
+
+		const wrapper = mount(App, {attachTo: document.body, global: {plugins: [router]}})
+		await waitFor(() => wrapper.findAll('.sc-frame').length === 1)
+
+		// One frame drawn by the route — no Chart.vue SVG shell, no LineChart
+		expect(wrapper.findAll('.sc-frame')).toHaveLength(1)
+		expect(wrapper.findAll('svg')).toHaveLength(0)
+
+		// happy-dom has no HTML-in-Canvas API: the overlay carries the labels
+		expect(wrapper.findAll('.sc-overlay .sc-label')).toHaveLength(49)
+		expect(wrapper.find('.sc-caption').text()).toContain('49 nodes · 41 dependencies')
+
+		wrapper.unmount()
+	})
 })

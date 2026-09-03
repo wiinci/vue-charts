@@ -15,6 +15,12 @@ export const router = createRouter({
 			component: () => import('@/views/HomeView.vue'),
 			meta: {title: 'vue-charts'},
 		},
+		{
+			path: '/sankey',
+			name: 'sankey',
+			component: () => import('@/views/SankeyCanvasView.vue'),
+			meta: {title: 'Sankey — vue-charts'},
+		},
 	],
 })
 
