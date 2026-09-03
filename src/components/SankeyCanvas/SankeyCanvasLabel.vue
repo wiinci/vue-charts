@@ -10,7 +10,9 @@ const props = defineProps<{
 	drawable?: boolean
 }>()
 
-const emit = defineEmits<{enter: [id: string]; leave: [id: string]}>()
+// Click/keyboard activation toggles collapse, as the SVG's invisible node
+// rects do (Nodes.vue emits click and keydown for the same surface)
+const emit = defineEmits<{click: [id: string]; enter: [id: string]; leave: [id: string]}>()
 
 // Overlay positions come from the scene as percentages of the frame; the
 // transform applies the SVG's text-anchor (end-anchored text ends at the node)
@@ -32,7 +34,10 @@ const positionStyle = computed(() => {
 		:style="positionStyle"
 		tabindex="0"
 		@blur="emit('leave', label.id)"
+		@click="emit('click', label.id)"
 		@focus="emit('enter', label.id)"
+		@keydown.enter="emit('click', label.id)"
+		@keydown.space="emit('click', label.id)"
 		@pointerenter="emit('enter', label.id)"
 		@pointerleave="emit('leave', label.id)"
 	>{{ label.text }}</div>

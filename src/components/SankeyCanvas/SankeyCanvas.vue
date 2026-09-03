@@ -1,9 +1,21 @@
 <script setup lang="ts">
-import {onBeforeUnmount, onMounted, ref, watch} from 'vue'
-import type {ComponentPublicInstance} from 'vue'
+import {computed, inject, onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import type {ComponentPublicInstance, Ref} from 'vue'
 import {constants} from '@/assets/constants'
+import {
+	createLinkSweep,
+	getLabelEnterDelay,
+	getLinkEnterDelay,
+	getLinkExitDelay,
+	LABEL_EXIT_DELAY,
+	LABEL_INITIAL_OPACITY,
+	sweepFinished,
+	sweepProgress,
+	type LinkSweep,
+	type TimedSweep,
+} from '@/composables/sankeyCanvasAnimation'
 import {useHtmlInCanvas} from '@/composables/useHtmlInCanvas'
-import type {SceneLink} from '@/composables/useSankeyCanvasScene'
+import type {SankeyCanvasScene, SceneLabel, SceneLink} from '@/composables/useSankeyCanvasScene'
 import {useSankeyCanvasScene} from '@/composables/useSankeyCanvasScene'
 import type {SankeyProps} from '@/composables/useNodesAndLinks'
 import SankeyCanvasLabel from './SankeyCanvasLabel.vue'
@@ -39,7 +51,18 @@ const props = withDefaults(
 	},
 )
 
-const {scene, setHovered, clearHovered} = useSankeyCanvasScene(props)
+// The SVG consumers inject with a `true` default (Links.vue:45, Labels.vue:20);
+// the route's view provides the SVG's own gate — a ref that flips after
+// requestIdleCallback + a double rAF, so the first paint races it (spec V17).
+const animationsEnabled = inject<Ref<boolean>>('animationsEnabled', ref(true))
+
+const {scene, setHovered, clearHovered, toggleCollapse} = useSankeyCanvasScene(props)
+
+const handleLabelClick = (id: string) => {
+	// The SVG's useCollapsed.toggleCollapse: hide the subtree post-layout — no
+	// relayout, the vacated space stays empty, no marker is added (spec V16)
+	toggleCollapse?.(id)
+}
 
 // Mode is decided once at setup and never re-evaluated; the footnote states it
 const mode = useHtmlInCanvas().value.supported ? 'html-in-canvas' : 'overlay'
@@ -64,6 +87,233 @@ const registerLabel = (id: string, el: Element | ComponentPublicInstance | null)
 	} else {
 		labelEls.delete(id)
 	}
+}
+
+// ---- Enter/exit coordination: the SVG's D3 join, replayed by repainting ----
+// The SVG animates through keyed joins in Links.vue/Labels.vue gated by
+// animationsEnabled. The canvas executor tracks the same lifecycle between
+// scene updates and repaints with a progress value in a rAF loop; the delay
+// curves, duration, easing and path interpolation are the SVG's own
+// (see sankeyCanvasAnimation.ts).
+
+interface KnownLink {
+	finalPath: string
+	initialPath: string
+	depth: number
+	emphasized: boolean
+}
+
+/** Geometry of every link key ever drawn — the sweep material for enter/exit */
+const knownLinks = new Map<string, KnownLink>()
+/** Link keys currently on screen (settled or mid-entrance) */
+const drawnLinkKeys = new Set<string>()
+/** Enter sweeps: from the flat source line to the final curve (Links.vue's enter selection) */
+const enteringLinks = new Map<string, LinkSweep>()
+/** Exit sweeps: back to the flat source line, reverse-staggered by depth (Links.vue's exit selection) */
+const exitingLinks = new Map<string, {sweep: LinkSweep; emphasized: boolean}>()
+
+/** Label ids currently on screen */
+const drawnLabelIds = new Set<string>()
+/** Entering labels fade 1e-9 → 1, staggered by depth (Labels.vue's enter selection) */
+const enteringLabels = new Map<string, LabelFade>()
+/** Last applied opacity per label id — the `from` value for a mid-flight exit */
+const labelOpacities = new Map<string, number>()
+/**
+ * Exiting labels stay mounted until their fade completes (Labels.vue's exit
+ * transition removes the element only after opacity reaches 0). Vue unmounts
+ * scene labels the moment the scene drops them, so the template renders the
+ * scene plus whatever is still fading out.
+ */
+const exitingLabels = ref<Array<{label: SceneLabel; sweep: TimedSweep; from: number}>>([])
+const renderedLabels = computed(() => [
+	...scene.value.labels,
+	...exitingLabels.value.map((exit) => exit.label),
+])
+
+interface LabelFade extends TimedSweep {
+	/** Opacity the fade starts from (1e-9 on a fresh enter, mid-fade on a cancelled exit) */
+	from: number
+}
+
+// performance.now — the same time base d3-timer runs the SVG's transitions on
+const clock = (): number => performance.now()
+
+/** The path painted for `key` right now, if it is mid-sweep (else null — settled) */
+function currentLinkPath(key: string, now: number): string | null {
+	const enter = enteringLinks.get(key)
+	if (enter) return enter.interpolate(sweepProgress(enter, now))
+	const exit = exitingLinks.get(key)
+	if (exit) return exit.sweep.interpolate(sweepProgress(exit.sweep, now))
+	return null
+}
+
+/**
+ * Diff the drawn set against a new scene — the canvas analogue of the SVG's
+ * keyed join. Enters sweep, exits sweep back, re-entrances cancel their exit.
+ */
+function onSceneChanged(next: SankeyCanvasScene, previous?: SankeyCanvasScene): void {
+	const now = clock()
+	const animated = animationsEnabled.value
+
+	// Links
+	const maxDepth = next.links.reduce((max, link) => Math.max(max, link.depth), 0)
+	const sceneKeys = new Set(next.links.map((link) => link.key))
+	for (const link of next.links) {
+		knownLinks.set(link.key, {
+			finalPath: link.path,
+			initialPath: link.initialPath,
+			depth: link.depth,
+			emphasized: link.emphasized,
+		})
+		const exit = exitingLinks.get(link.key)
+		if (exit) {
+			// Back in the scene before the exit finished — Links.vue's update
+			// selection transitions the path back to the final curve, no delay
+			exitingLinks.delete(link.key)
+			drawnLinkKeys.add(link.key)
+			if (animated) {
+				const from = exit.sweep.interpolate(sweepProgress(exit.sweep, now))
+				enteringLinks.set(link.key, createLinkSweep(from, link.path, 0, now))
+			}
+			continue
+		}
+		if (drawnLinkKeys.has(link.key)) continue
+		drawnLinkKeys.add(link.key)
+		// New key: the enter selection. Without animation the link renders
+		// settled immediately (Links.vue joins with animationsEnabled false).
+		if (animated) {
+			enteringLinks.set(
+				link.key,
+				createLinkSweep(link.initialPath, link.path, getLinkEnterDelay(link.depth), now),
+			)
+		}
+	}
+	for (const key of Array.from(drawnLinkKeys)) {
+		if (sceneKeys.has(key)) continue
+		// Gone from the scene: the exit selection — sweep back to the flat
+		// source line, delayed (maxDepth - depth) × fast (Links.vue:137-141)
+		drawnLinkKeys.delete(key)
+		enteringLinks.delete(key)
+		const known = knownLinks.get(key)
+		if (!animated || !known) continue
+		exitingLinks.set(key, {
+			sweep: createLinkSweep(
+				currentLinkPath(key, now) ?? known.finalPath,
+				known.initialPath,
+				getLinkExitDelay(known.depth, maxDepth),
+				now,
+			),
+			emphasized: known.emphasized,
+		})
+	}
+
+	// Labels
+	const sceneLabelIds = new Set(next.labels.map((label) => label.id))
+	for (const label of next.labels) {
+		const wasExiting = exitingLabels.value.some((exit) => exit.label.id === label.id)
+		if (wasExiting) {
+			exitingLabels.value = exitingLabels.value.filter((exit) => exit.label.id !== label.id)
+		}
+		if (drawnLabelIds.has(label.id)) continue
+		drawnLabelIds.add(label.id)
+		if (animated) {
+			const from = wasExiting ? (labelOpacities.get(label.id) ?? 1) : LABEL_INITIAL_OPACITY
+			enteringLabels.set(label.id, {
+				start: now,
+				delay: getLabelEnterDelay(label.depth),
+				from,
+			})
+			// The SVG's enter selection applies opacity synchronously — never a
+			// frame at full opacity before the first fade tick
+			const el = labelEls.get(label.id)
+			if (el) {
+				el.style.opacity = String(from)
+				labelOpacities.set(label.id, from)
+			}
+		}
+	}
+	const previousLabels = new Map((previous?.labels ?? []).map((label) => [label.id, label]))
+	for (const id of Array.from(drawnLabelIds)) {
+		if (sceneLabelIds.has(id)) continue
+		// Gone from the scene: fade straight out, no delay (Labels.vue:74-81)
+		drawnLabelIds.delete(id)
+		enteringLabels.delete(id)
+		const label = previousLabels.get(id)
+		if (!animated || !label) continue
+		exitingLabels.value.push({
+			label,
+			sweep: {start: now, delay: LABEL_EXIT_DELAY},
+			from: labelOpacities.get(id) ?? 1,
+		})
+	}
+}
+
+/** Advance label fades and link sweeps to `now`; returns true while anything is still animating */
+function advanceFrame(now: number): boolean {
+	for (const [key, sweep] of Array.from(enteringLinks)) {
+		if (sweepFinished(sweep, now)) enteringLinks.delete(key)
+	}
+	for (const [key, exit] of Array.from(exitingLinks)) {
+		if (sweepFinished(exit.sweep, now)) exitingLinks.delete(key)
+	}
+	for (const [id, fade] of Array.from(enteringLabels)) {
+		const el = labelEls.get(id)
+		if (el) {
+			const done = sweepFinished(fade, now)
+			const opacity = done ? 1 : fade.from + (1 - fade.from) * sweepProgress(fade, now)
+			el.style.opacity = String(opacity)
+			labelOpacities.set(id, opacity)
+		}
+		if (sweepFinished(fade, now)) enteringLabels.delete(id)
+	}
+	for (const exit of Array.from(exitingLabels.value)) {
+		const el = labelEls.get(exit.label.id)
+		const opacity = exit.from * (1 - sweepProgress(exit.sweep, now))
+		if (el) {
+			el.style.opacity = String(opacity)
+			labelOpacities.set(exit.label.id, opacity)
+		}
+		if (sweepFinished(exit.sweep, now)) {
+			exitingLabels.value = exitingLabels.value.filter(
+				(record) => record.label.id !== exit.label.id,
+			)
+		}
+	}
+	return (
+		enteringLinks.size > 0 ||
+		exitingLinks.size > 0 ||
+		enteringLabels.size > 0 ||
+		exitingLabels.value.length > 0
+	)
+}
+
+let animRafId: number | null = null
+
+function animationTick(): void {
+	animRafId = null
+	const stillAnimating = advanceFrame(clock())
+	repaint()
+	if (stillAnimating) animRafId = requestAnimationFrame(animationTick)
+}
+
+function ensureAnimationLoop(): void {
+	const animating =
+		enteringLinks.size > 0 ||
+		exitingLinks.size > 0 ||
+		enteringLabels.size > 0 ||
+		exitingLabels.value.length > 0
+	if (animating && animRafId === null) {
+		animRafId = requestAnimationFrame(animationTick)
+	}
+}
+
+/** Repaint from the animation loop — requestPaint in HTML-in-Canvas mode, direct paint otherwise */
+function repaint(): void {
+	if (mode === 'html-in-canvas') {
+		canvasRef.value?.requestPaint()
+		return
+	}
+	paint()
 }
 
 // Design-size defaults; the ResizeObserver replaces them with the real canvas box
@@ -97,6 +347,7 @@ function paint() {
 
 	const {cssWidth, cssHeight, dpr} = size.value
 	const scale = cssWidth / scene.value.width // layout units → CSS px
+	const now = clock()
 
 	// Keep the bitmap at the frame's CSS size × devicePixelRatio (spec A1)
 	const bitmapWidth = Math.round(cssWidth * dpr)
@@ -118,7 +369,15 @@ function paint() {
 	for (const link of scene.value.links) {
 		ctx.strokeStyle = link.emphasized ? constants.linkColorHighlight : constants.linkColor
 		ctx.lineWidth = (link.emphasized ? 1.2 : 1) / scale
-		ctx.stroke(pathFor(link))
+		// Mid-sweep links paint their interpolated path; settled links the cached final one
+		const animatedPath = currentLinkPath(link.key, now)
+		ctx.stroke(animatedPath ? new Path2D(animatedPath) : pathFor(link))
+	}
+	// Exiting links still sweep back toward their source line until removed
+	for (const [, exit] of exitingLinks) {
+		ctx.strokeStyle = exit.emphasized ? constants.linkColorHighlight : constants.linkColor
+		ctx.lineWidth = (exit.emphasized ? 1.2 : 1) / scale
+		ctx.stroke(new Path2D(exit.sweep.interpolate(sweepProgress(exit.sweep, now))))
 	}
 	ctx.restore()
 
@@ -126,7 +385,7 @@ function paint() {
 	// positions the same elements with CSS.
 	if (mode !== 'html-in-canvas') return
 
-	for (const label of scene.value.labels) {
+	for (const label of renderedLabels.value) {
 		const el = labelEls.get(label.id)
 		if (!el) continue
 		const x = label.x * scale - (label.anchor === 'end' ? el.offsetWidth : 0)
@@ -154,7 +413,11 @@ function schedulePaint() {
 	})
 }
 
-watch(scene, schedulePaint)
+watch(scene, (next, previous) => {
+	onSceneChanged(next, previous)
+	schedulePaint()
+	ensureAnimationLoop()
+})
 
 onMounted(() => {
 	if (mode === 'html-in-canvas') {
@@ -170,8 +433,12 @@ onMounted(() => {
 		})
 		resizeObserver.observe(canvasRef.value)
 	}
-	// First paint — the observer's initial callback is not relied on
+	// First scene observation is the mount-time join: when the async mount
+	// lost the race to the animation gate (spec V17's animated outcome) the
+	// whole first paint sweeps in; otherwise it settles instantly.
+	onSceneChanged(scene.value)
 	schedulePaint()
+	ensureAnimationLoop()
 })
 
 onBeforeUnmount(() => {
@@ -181,7 +448,9 @@ onBeforeUnmount(() => {
 		canvasRef.value?.removeEventListener('paint', paint)
 	}
 	if (rafId) cancelAnimationFrame(rafId)
+	if (animRafId !== null) cancelAnimationFrame(animRafId)
 	rafId = 0
+	animRafId = null
 })
 </script>
 
@@ -196,11 +465,12 @@ onBeforeUnmount(() => {
 			<canvas ref="canvasRef" class="sc-canvas" :layoutsubtree="mode === 'html-in-canvas' ? '' : undefined">
 				<template v-if="mode === 'html-in-canvas'">
 					<SankeyCanvasLabel
-						v-for="label in scene.labels"
+						v-for="label in renderedLabels"
 						:key="label.id"
 						:ref="(el) => registerLabel(label.id, el)"
 						:label="label"
 						drawable
+						@click="handleLabelClick"
 						@enter="setHovered"
 						@leave="clearHovered"
 					/>
@@ -208,11 +478,12 @@ onBeforeUnmount(() => {
 			</canvas>
 			<div v-if="mode === 'overlay'" class="sc-overlay">
 				<SankeyCanvasLabel
-					v-for="label in scene.labels"
+					v-for="label in renderedLabels"
 					:key="label.id"
 					:ref="(el) => registerLabel(label.id, el)"
 					:label="label"
 					positioned
+					@click="handleLabelClick"
 					@enter="setHovered"
 					@leave="clearHovered"
 				/>
