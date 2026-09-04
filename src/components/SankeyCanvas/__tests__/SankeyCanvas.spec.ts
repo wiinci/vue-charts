@@ -9,7 +9,7 @@ import {useSankeyCanvasScene} from '@/composables/useSankeyCanvasScene'
 import SankeyCanvas from '../SankeyCanvas.vue'
 
 const appProps = {
-	data: sankeyJsonData.map((item) => ({...item, value: 1})) as SankeyLink[],
+	data: sankeyJsonData.map(item => ({...item, value: 1})) as SankeyLink[],
 	height: 480,
 	marginLeft: 20,
 	marginRight: 20,
@@ -53,16 +53,24 @@ beforeEach(() => {
 		scale: vi.fn(),
 		setTransform: vi.fn(),
 		stroke: vi.fn((path?: unknown) => {
-			strokes.push({path, strokeStyle: recordingCtx.strokeStyle as string, lineWidth: recordingCtx.lineWidth})
+			strokes.push({
+				path,
+				strokeStyle: recordingCtx.strokeStyle as string,
+				lineWidth: recordingCtx.lineWidth,
+			})
 		}),
 		globalCompositeOperation: 'source-over',
 		lineWidth: 0,
 		strokeStyle: '',
 	} as unknown as RecordingContext
-	vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(recordingCtx)
+	vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+		recordingCtx,
+	)
 	requestPaint = vi.fn()
 	// happy-dom's HTMLCanvasElement predates the WICG API
-	;(HTMLCanvasElement.prototype as unknown as {requestPaint: unknown}).requestPaint = requestPaint
+	;(
+		HTMLCanvasElement.prototype as unknown as {requestPaint: unknown}
+	).requestPaint = requestPaint
 	// Paint synchronously so tests can assert a deterministic number of paints
 	vi.stubGlobal('requestAnimationFrame', (callback: () => void) => {
 		callback()
@@ -81,14 +89,17 @@ beforeEach(() => {
 afterEach(() => {
 	vi.unstubAllGlobals()
 	vi.restoreAllMocks()
-	delete (HTMLCanvasElement.prototype as unknown as {requestPaint?: () => void}).requestPaint
+	delete (HTMLCanvasElement.prototype as unknown as {requestPaint?: () => void})
+		.requestPaint
 })
 
 // Every mount runs with the animation gate off unless a test turns it on —
 // the route's view provides the gate in the real app, and happy-dom's
 // synchronous rAF stub would recurse on the animation loop otherwise
-const mountCanvas = (props: typeof appProps = appProps, animationsEnabled: Ref<boolean> = ref(false)) =>
-	mount(SankeyCanvas, {props, global: {provide: {animationsEnabled}}})
+const mountCanvas = (
+	props: typeof appProps = appProps,
+	animationsEnabled: Ref<boolean> = ref(false),
+) => mount(SankeyCanvas, {props, global: {provide: {animationsEnabled}}})
 
 describe('SankeyCanvas (overlay mode — happy-dom has no HTML-in-Canvas API)', () => {
 	it('renders the frame, overlay labels, caption and footnote', () => {
@@ -97,8 +108,12 @@ describe('SankeyCanvas (overlay mode — happy-dom has no HTML-in-Canvas API)', 
 		expect(wrapper.find('[data-mode="overlay"]').exists()).toBe(true)
 		expect(wrapper.findAll('.sc-frame')).toHaveLength(1)
 		expect(wrapper.findAll('.sc-overlay .sc-label')).toHaveLength(49)
-		expect(wrapper.find('.sc-caption').text()).toContain('49 nodes · 41 dependencies')
-		expect(wrapper.find('.sc-caption .sc-mode').text()).toContain('chrome://flags/#canvas-draw-element')
+		expect(wrapper.find('.sc-caption').text()).toContain(
+			'49 nodes · 41 dependencies',
+		)
+		expect(wrapper.find('.sc-caption .sc-mode').text()).toContain(
+			'chrome://flags/#canvas-draw-element',
+		)
 
 		// Overlay labels are percentage-positioned by the scene
 		const first = wrapper.find('.sc-overlay .sc-label')
@@ -110,7 +125,9 @@ describe('SankeyCanvas (overlay mode — happy-dom has no HTML-in-Canvas API)', 
 		const wrapper = mountCanvas()
 
 		// At the design width the scale is 1, i.e. the SVG's own 12px labels
-		expect(wrapper.find('.sc-frame').attributes('style')).toContain('--sc-scale: 1')
+		expect(wrapper.find('.sc-frame').attributes('style')).toContain(
+			'--sc-scale: 1',
+		)
 		wrapper.unmount()
 	})
 
@@ -120,8 +137,8 @@ describe('SankeyCanvas (overlay mode — happy-dom has no HTML-in-Canvas API)', 
 
 		expect(strokes).toHaveLength(41)
 		expect(recordingCtx.globalCompositeOperation).toBe('multiply')
-		expect(strokes.every((stroke) => stroke.strokeStyle === '#DBDBDB')).toBe(true)
-		expect(strokes.every((stroke) => stroke.lineWidth === 1)).toBe(true)
+		expect(strokes.every(stroke => stroke.strokeStyle === '#DBDBDB')).toBe(true)
+		expect(strokes.every(stroke => stroke.lineWidth === 1)).toBe(true)
 		wrapper.unmount()
 	})
 
@@ -135,9 +152,11 @@ describe('SankeyCanvas (overlay mode — happy-dom has no HTML-in-Canvas API)', 
 		await flushPromises()
 
 		expect(strokes).toHaveLength(41)
-		const emphasized = strokes.filter((stroke) => stroke.strokeStyle === '#1F1D3D')
+		const emphasized = strokes.filter(
+			stroke => stroke.strokeStyle === '#1F1D3D',
+		)
 		expect(emphasized).toHaveLength(5)
-		expect(emphasized.every((stroke) => stroke.lineWidth === 1.2)).toBe(true)
+		expect(emphasized.every(stroke => stroke.lineWidth === 1.2)).toBe(true)
 		// Emphasis paints last: the tail of the stroke order is exactly the
 		// emphasized set
 		expect(strokes.slice(-5)).toEqual(emphasized)
@@ -158,8 +177,8 @@ describe('SankeyCanvas (overlay mode — happy-dom has no HTML-in-Canvas API)', 
 		await flushPromises()
 
 		// The leave repaint strokes everything at rest again
-		expect(strokes.every((stroke) => stroke.strokeStyle === '#DBDBDB')).toBe(true)
-		expect(strokes.every((stroke) => stroke.lineWidth === 1)).toBe(true)
+		expect(strokes.every(stroke => stroke.strokeStyle === '#DBDBDB')).toBe(true)
+		expect(strokes.every(stroke => stroke.lineWidth === 1)).toBe(true)
 		expect(label.classes()).not.toContain('sc-label--active')
 		wrapper.unmount()
 	})
@@ -178,7 +197,9 @@ describe('collapse (spec V16 — click the label, the SVG useCollapsed hides the
 
 		const frame = wrapper.find('.sc-frame')
 		const caption = wrapper.find('.sc-caption')
-		expect(frame.attributes('aria-label')).toBe('Dependency graph: 49 nodes, 41 links')
+		expect(frame.attributes('aria-label')).toBe(
+			'Dependency graph: 49 nodes, 41 links',
+		)
 		expect(caption.text()).toContain('49 nodes · 41 dependencies')
 
 		// Every label's frozen position, captured before the collapse
@@ -191,10 +212,14 @@ describe('collapse (spec V16 — click the label, the SVG useCollapsed hides the
 		await flushPromises()
 
 		// 41→36 links, 49→44 labels — exactly the reference collapse
-		expect(frame.attributes('aria-label')).toBe('Dependency graph: 44 nodes, 36 links')
+		expect(frame.attributes('aria-label')).toBe(
+			'Dependency graph: 44 nodes, 36 links',
+		)
 		expect(caption.text()).toContain('44 nodes · 36 dependencies')
 		expect(wrapper.findAll('.sc-overlay .sc-label')).toHaveLength(44)
-		const visibleIds = wrapper.findAll('.sc-overlay .sc-label').map((label) => label.text())
+		const visibleIds = wrapper
+			.findAll('.sc-overlay .sc-label')
+			.map(label => label.text())
 		expect(visibleIds).toContain('n9::n3') // the collapsed root stays
 		for (const id of ['n10::n3', 'n4::n3', 'n11::n2', 'n2::n2', 'n6::n2']) {
 			expect(visibleIds).not.toContain(id)
@@ -203,7 +228,9 @@ describe('collapse (spec V16 — click the label, the SVG useCollapsed hides the
 		// No relayout: every surviving label keeps its exact frozen position —
 		// the vacated space stays empty
 		for (const label of wrapper.findAll('.sc-overlay .sc-label')) {
-			expect(label.attributes('style'), label.text()).toBe(positionsBefore.get(label.text()))
+			expect(label.attributes('style'), label.text()).toBe(
+				positionsBefore.get(label.text()),
+			)
 		}
 
 		// Links repainted without the hidden subtree
@@ -213,11 +240,15 @@ describe('collapse (spec V16 — click the label, the SVG useCollapsed hides the
 		strokes.length = 0
 		await findLabel(wrapper, 'n9::n3').trigger('click')
 		await flushPromises()
-		expect(frame.attributes('aria-label')).toBe('Dependency graph: 49 nodes, 41 links')
+		expect(frame.attributes('aria-label')).toBe(
+			'Dependency graph: 49 nodes, 41 links',
+		)
 		expect(caption.text()).toContain('49 nodes · 41 dependencies')
 		expect(wrapper.findAll('.sc-overlay .sc-label')).toHaveLength(49)
 		for (const label of wrapper.findAll('.sc-overlay .sc-label')) {
-			expect(label.attributes('style'), label.text()).toBe(positionsBefore.get(label.text()))
+			expect(label.attributes('style'), label.text()).toBe(
+				positionsBefore.get(label.text()),
+			)
 		}
 		expect(strokes).toHaveLength(41)
 		wrapper.unmount()
@@ -235,7 +266,7 @@ describe('collapse (spec V16 — click the label, the SVG useCollapsed hides the
 		await findLabel(wrapper, 'n9::n3').trigger('pointerenter')
 		await flushPromises()
 		expect(strokes).toHaveLength(36)
-		expect(strokes.every((stroke) => stroke.strokeStyle === '#DBDBDB')).toBe(true)
+		expect(strokes.every(stroke => stroke.strokeStyle === '#DBDBDB')).toBe(true)
 		expect(findLabel(wrapper, 'n9::n3').classes()).toContain('sc-label--active')
 
 		// Hovering a visible neighbour still highlights its visible upstream —
@@ -243,9 +274,11 @@ describe('collapse (spec V16 — click the label, the SVG useCollapsed hides the
 		strokes.length = 0
 		await findLabel(wrapper, 'n4::n2').trigger('pointerenter')
 		await flushPromises()
-		const emphasized = strokes.filter((stroke) => stroke.strokeStyle === '#1F1D3D')
+		const emphasized = strokes.filter(
+			stroke => stroke.strokeStyle === '#1F1D3D',
+		)
 		expect(emphasized).toHaveLength(2)
-		expect(emphasized.every((stroke) => stroke.lineWidth === 1.2)).toBe(true)
+		expect(emphasized.every(stroke => stroke.lineWidth === 1.2)).toBe(true)
 		wrapper.unmount()
 	})
 })
@@ -272,7 +305,7 @@ describe('entrance animation (spec V17 — the gate on at mount, stepped frames)
 
 	it('sweeps links out of their source points with the SVG delay curve', async () => {
 		const planned = useSankeyCanvasScene(appProps).scene.value
-		const depth0 = planned.links.filter((link) => link.depth === 0)
+		const depth0 = planned.links.filter(link => link.depth === 0)
 		expect(depth0.length).toBeGreaterThan(0)
 
 		const wrapper = mountCanvas(appProps, ref(true))
@@ -286,19 +319,27 @@ describe('entrance animation (spec V17 — the gate on at mount, stepped frames)
 		// ease); everything deeper still sits on its flat source line
 		step(150)
 		expect(strokes).toHaveLength(41)
-		const flat = strokes.filter((stroke) => isFlatSourcePath(pathText(stroke)))
+		const flat = strokes.filter(stroke => isFlatSourcePath(pathText(stroke)))
 		expect(flat).toHaveLength(41 - depth0.length)
 		// The mid-sweep path is d3's own interpolation: interpolateString(
 		// initialPath, finalPath)(0.5), as d3-transition renders the `d`
-		const expectedMid = createLinkSweep(depth0[0].initialPath, depth0[0].path, 0, 0).interpolate(0.5)
+		const expectedMid = createLinkSweep(
+			depth0[0].initialPath,
+			depth0[0].path,
+			0,
+			0,
+		).interpolate(0.5)
 		expect(strokes.map(pathText)).toContain(expectedMid)
 
 		// Labels fade with the same stagger — depth 0 mid-fade, depth 3 untouched
-		const depth0Label = planned.labels.find((label) => label.depth === 0)
+		const depth0Label = planned.labels.find(label => label.depth === 0)
 		expect(depth0Label).toBeDefined()
 		const midLabel = findLabelEl(wrapper, depth0Label!.id)
 		expect(Number(midLabel.style.opacity)).toBeCloseTo(0.5, 4)
-		const deepLabel = findLabelEl(wrapper, planned.labels.find((label) => label.depth === 3)!.id)
+		const deepLabel = findLabelEl(
+			wrapper,
+			planned.labels.find(label => label.depth === 3)!.id,
+		)
 		expect(deepLabel.style.opacity).toBe(String(1e-9))
 
 		// +450ms more (t0+600): every delay (≤400) and duration has elapsed —
@@ -306,7 +347,7 @@ describe('entrance animation (spec V17 — the gate on at mount, stepped frames)
 		strokes.length = 0
 		step(450)
 		expect(strokes).toHaveLength(41)
-		const finalPaths = new Set(planned.links.map((link) => link.path))
+		const finalPaths = new Set(planned.links.map(link => link.path))
 		for (const stroke of strokes) {
 			expect(finalPaths.has(pathText(stroke)), pathText(stroke)).toBe(true)
 		}
@@ -322,12 +363,16 @@ describe('entrance animation (spec V17 — the gate on at mount, stepped frames)
 		step(600) // t0+600: the entrance has fully settled
 		strokes.length = 0
 
-		const finalPaths = new Set(useSankeyCanvasScene(appProps).scene.value.links.map((link) => link.path))
+		const finalPaths = new Set(
+			useSankeyCanvasScene(appProps).scene.value.links.map(link => link.path),
+		)
 		await findLabel(wrapper, 'n9::n3').trigger('click')
 		await flushPromises()
 
 		// The scene moves immediately (aria + caption), the exits begin
-		expect(wrapper.find('.sc-frame').attributes('aria-label')).toBe('Dependency graph: 44 nodes, 36 links')
+		expect(wrapper.find('.sc-frame').attributes('aria-label')).toBe(
+			'Dependency graph: 44 nodes, 36 links',
+		)
 		expect(wrapper.findAll('.sc-overlay .sc-label')).toHaveLength(49) // 44 visible + 5 still fading
 
 		// Drain the click's queued paint + tick, then time the exits. The
@@ -351,20 +396,22 @@ describe('entrance animation (spec V17 — the gate on at mount, stepped frames)
 		strokes.length = 0
 		step(50)
 		expect(strokes).toHaveLength(41)
-		const mid = strokes.filter((stroke) => !finalPaths.has(pathText(stroke)))
+		const mid = strokes.filter(stroke => !finalPaths.has(pathText(stroke)))
 		expect(mid).toHaveLength(4)
 
 		// t0+850: the depth-1 exits are pruned, the depth-0 exit is mid-sweep
 		strokes.length = 0
 		step(100)
 		expect(strokes).toHaveLength(37)
-		expect(strokes.filter((stroke) => !finalPaths.has(pathText(stroke)))).toHaveLength(1)
+		expect(
+			strokes.filter(stroke => !finalPaths.has(pathText(stroke))),
+		).toHaveLength(1)
 
 		// t0+950: every exit finished — the subtree is gone
 		strokes.length = 0
 		step(100)
 		expect(strokes).toHaveLength(36)
-		expect(strokes.every((stroke) => finalPaths.has(pathText(stroke)))).toBe(true)
+		expect(strokes.every(stroke => finalPaths.has(pathText(stroke)))).toBe(true)
 		wrapper.unmount()
 	})
 
@@ -379,10 +426,14 @@ describe('entrance animation (spec V17 — the gate on at mount, stepped frames)
 		step(400) // t0+1000: the collapse exits have fully finished
 		await flushPromises()
 
-		const finalPaths = new Set(useSankeyCanvasScene(appProps).scene.value.links.map((link) => link.path))
+		const finalPaths = new Set(
+			useSankeyCanvasScene(appProps).scene.value.links.map(link => link.path),
+		)
 		await findLabel(wrapper, 'n9::n3').trigger('click')
 		await flushPromises()
-		expect(wrapper.find('.sc-frame').attributes('aria-label')).toBe('Dependency graph: 49 nodes, 41 links')
+		expect(wrapper.find('.sc-frame').attributes('aria-label')).toBe(
+			'Dependency graph: 49 nodes, 41 links',
+		)
 
 		// Drain the click's queued paint + tick, then time the re-entry: the
 		// forward stagger runs over source depths — the depth-0 source sweeps
@@ -394,7 +445,7 @@ describe('entrance animation (spec V17 — the gate on at mount, stepped frames)
 		// still flat on their initial lines
 		step(150)
 		expect(strokes).toHaveLength(41)
-		const flats = strokes.filter((stroke) => isFlatSourcePath(pathText(stroke)))
+		const flats = strokes.filter(stroke => isFlatSourcePath(pathText(stroke)))
 		expect(flats).toHaveLength(4)
 		await flushPromises()
 		expect(wrapper.findAll('.sc-overlay .sc-label')).toHaveLength(49)
@@ -407,7 +458,7 @@ describe('entrance animation (spec V17 — the gate on at mount, stepped frames)
 		strokes.length = 0
 		step(500)
 		expect(strokes).toHaveLength(41)
-		expect(strokes.every((stroke) => finalPaths.has(pathText(stroke)))).toBe(true)
+		expect(strokes.every(stroke => finalPaths.has(pathText(stroke)))).toBe(true)
 		expect(reentered.style.opacity).toBe('1')
 		wrapper.unmount()
 	})
@@ -417,7 +468,9 @@ describe('SankeyCanvas (HTML-in-Canvas mode — API stubbed on the prototypes)',
 	beforeEach(() => {
 		// Mount-time detection reads the constructor off the window; the
 		// recording context itself is what receives the draw calls
-		vi.stubGlobal('CanvasRenderingContext2D', {prototype: {drawElementImage: () => {}}})
+		vi.stubGlobal('CanvasRenderingContext2D', {
+			prototype: {drawElementImage: () => {}},
+		})
 	})
 
 	it('renders labels as drawable children of the layoutsubtree canvas', () => {
@@ -430,7 +483,9 @@ describe('SankeyCanvas (HTML-in-Canvas mode — API stubbed on the prototypes)',
 		// Every label is a DIRECT child carrying the drawable attribute
 		expect(canvas.element.children).toHaveLength(49)
 		expect(
-			Array.from(canvas.element.children).every((child) => child.hasAttribute('drawable')),
+			Array.from(canvas.element.children).every(child =>
+				child.hasAttribute('drawable'),
+			),
 		).toBe(true)
 		wrapper.unmount()
 	})
@@ -461,7 +516,9 @@ describe('SankeyCanvas (HTML-in-Canvas mode — API stubbed on the prototypes)',
 		wrapper.find('canvas').element.dispatchEvent(new Event('paint'))
 
 		// Hit-testing, focus and find-in-page have to land on the drawn glyphs
-		expect(findLabelEl(wrapper, 'n9::n3').style.transform).toBe('matrix(1, 0, 0, 1, 5, 7)')
+		expect(findLabelEl(wrapper, 'n9::n3').style.transform).toBe(
+			'matrix(1, 0, 0, 1, 5, 7)',
+		)
 		wrapper.unmount()
 	})
 
@@ -472,7 +529,9 @@ describe('SankeyCanvas (HTML-in-Canvas mode — API stubbed on the prototypes)',
 		const wrapper = mountCanvas()
 
 		const before = requestPaint.mock.calls.length
-		expect(() => wrapper.find('canvas').element.dispatchEvent(new Event('paint'))).not.toThrow()
+		expect(() =>
+			wrapper.find('canvas').element.dispatchEvent(new Event('paint')),
+		).not.toThrow()
 		expect(requestPaint.mock.calls.length).toBeGreaterThan(before)
 		wrapper.unmount()
 	})
@@ -485,7 +544,9 @@ describe('SankeyCanvas (HTML-in-Canvas mode — API stubbed on the prototypes)',
 		await flushPromises()
 
 		expect(wrapper.find('canvas').findAll('.sc-label')).toHaveLength(44)
-		expect(wrapper.find('.sc-caption').text()).toContain('44 nodes · 36 dependencies')
+		expect(wrapper.find('.sc-caption').text()).toContain(
+			'44 nodes · 36 dependencies',
+		)
 
 		recordingCtx.drawElementImage.mockClear()
 		wrapper.find('canvas').element.dispatchEvent(new Event('paint'))
@@ -505,14 +566,14 @@ describe('SankeyCanvas (HTML-in-Canvas mode — API stubbed on the prototypes)',
 
 		const before = requestPaint.mock.calls.length
 		nowSpy.mockReturnValue(1010)
-		rafQueue.splice(0).forEach((callback) => callback(1010))
+		rafQueue.splice(0).forEach(callback => callback(1010))
 		expect(requestPaint.mock.calls.length).toBeGreaterThan(before)
 		wrapper.unmount()
 	})
 })
 
 function findLabel(wrapper: VueWrapper, text: string) {
-	const label = wrapper.findAll('.sc-label').find((node) => node.text() === text)
+	const label = wrapper.findAll('.sc-label').find(node => node.text() === text)
 	expect(label, `label ${text}`).toBeDefined()
 	if (!label) throw new Error(`label ${text} not found`)
 	return label
