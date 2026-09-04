@@ -182,45 +182,62 @@ export function useSankeyCanvasScene(
 		return nodes.value.filter((node) => !hiddenNodeIds.value.has(node.id))
 	})
 
-	const scene = computed<SankeyCanvasScene>(() => {
-		const isHovering = hoveredId.value !== ''
-		const activeIds = new Set([hoveredId.value, ...sourceIds.value, ...targetIds.value])
+	// Geometry is independent of hover, so it is memoized separately: hovering
+	// then only re-derives `emphasized`/`state` instead of regenerating and
+	// re-rounding 41 path strings on every pointer move.
+	const linkGeometry = computed(() =>
+		visibleLinks.value.map((link: SankeyLinkLayout) => ({
+			link,
+			key: `${getLinkSourceId(link)}-${getLinkTargetId(link)}`,
+			// Same 2-decimal rounding the SVG renders (Links.vue)
+			path: optimizeSvgPath(pathOf(link) ?? ''),
+			initialPath: optimizeSvgPath(initialGenerator(link) ?? ''),
+			depth: (link.source as SankeyNode).depth || 0,
+		})),
+	)
+
+	const labelGeometry = computed(() => {
 		// Labels.vue receives the chart width (props minus margins), so the
 		// SVG's anchor midline is chartWidth / 2, not width / 2.
 		const chartMidline = (props.width - props.marginLeft - props.marginRight) / 2
+
+		return visibleNodes.value.map((node) => {
+			const key = getSankeyNodeKey(node, props.nodeId)
+			const y = node.y + node.height / 2
+			return {
+				id: key,
+				text: key,
+				x: node.x,
+				y,
+				fx: node.x / props.width,
+				fy: y / props.height,
+				anchor: (node.x < chartMidline ? 'start' : 'end') as 'start' | 'end',
+				// Labels.vue's (d.depth || 0)
+				depth: node.depth || 0,
+			}
+		})
+	})
+
+	const scene = computed<SankeyCanvasScene>(() => {
+		const isHovering = hoveredId.value !== ''
+		const activeIds = new Set([hoveredId.value, ...sourceIds.value, ...targetIds.value])
 
 		return {
 			width: props.width,
 			height: props.height,
 			hoveredId: hoveredId.value,
-			links: visibleLinks.value
-				.map((link: SankeyLinkLayout) => ({
-					key: `${getLinkSourceId(link)}-${getLinkTargetId(link)}`,
-					// Same 2-decimal rounding the SVG renders (Links.vue)
-					path: optimizeSvgPath(pathOf(link) ?? ''),
-					initialPath: optimizeSvgPath(initialGenerator(link) ?? ''),
-					depth: (link.source as SankeyNode).depth || 0,
+			links: linkGeometry.value
+				.map(({link, ...geometry}) => ({
+					...geometry,
 					emphasized: shouldHighlight(link, {trueValue: true, falseValue: false}),
 				}))
 				// Stable sort: rest links keep layout order, emphasized go last,
 				// as raising SVG paths to the top does
 				.sort((a, b) => Number(a.emphasized) - Number(b.emphasized)),
-			labels: visibleNodes.value.map((node) => {
-				const key = getSankeyNodeKey(node, props.nodeId)
-				const y = node.y + node.height / 2
-				return {
-					id: key,
-					text: key,
-					x: node.x,
-					y,
-					fx: node.x / props.width,
-					fy: y / props.height,
-					anchor: node.x < chartMidline ? 'start' : 'end',
-					// Labels.vue's (d.depth || 0)
-					depth: node.depth || 0,
-					state: !isHovering ? 'rest' : activeIds.has(key) ? 'active' : 'muted',
-				}
-			}),
+			labels: labelGeometry.value.map((geometry) => ({
+				...geometry,
+				state: !isHovering ? 'rest' : activeIds.has(geometry.id) ? 'active' : 'muted',
+			})),
 		}
 	})
 

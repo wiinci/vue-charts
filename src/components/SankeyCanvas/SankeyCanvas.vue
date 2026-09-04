@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, inject, onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import {computed, inject, onBeforeUnmount, onMounted, ref, shallowRef, watch} from 'vue'
 import type {ComponentPublicInstance, Ref} from 'vue'
 import {constants} from '@/assets/constants'
 import {
@@ -124,7 +124,7 @@ const labelOpacities = new Map<string, number>()
  * scene labels the moment the scene drops them, so the template renders the
  * scene plus whatever is still fading out.
  */
-const exitingLabels = ref<Array<{label: SceneLabel; sweep: TimedSweep; from: number}>>([])
+const exitingLabels = shallowRef<Array<{label: SceneLabel; sweep: TimedSweep; from: number}>>([])
 const renderedLabels = computed(() => [
 	...scene.value.labels,
 	...exitingLabels.value.map((exit) => exit.label),
@@ -317,7 +317,36 @@ function repaint(): void {
 }
 
 // Design-size defaults; the ResizeObserver replaces them with the real canvas box
-const size = ref({cssWidth: props.width, cssHeight: props.height, dpr: 1})
+const size = shallowRef({
+	cssWidth: props.width,
+	cssHeight: props.height,
+	bitmapWidth: props.width,
+	bitmapHeight: props.height,
+})
+
+/** Layout units → CSS px */
+const cssScale = computed(() => size.value.cssWidth / scene.value.width)
+/** Canvas grid px per CSS px — 1 outside HTML-in-Canvas mode */
+const devicePixelScale = computed(() => size.value.bitmapWidth / size.value.cssWidth)
+
+/**
+ * The SVG scales its 12px labels with the viewBox, so they shrink with the
+ * chart; HTML labels have to be told to. In HTML-in-Canvas mode the labels are
+ * laid out in the canvas grid and painted with the identity transform, so the
+ * grid's device-pixel scale belongs in here too.
+ */
+const labelScale = computed(() =>
+	mode === 'html-in-canvas' ? cssScale.value * devicePixelScale.value : cssScale.value,
+)
+
+const frameStyle = computed(() => ({'--sc-scale': String(labelScale.value)}))
+
+// Firefox and Safari have no devicePixelContentBoxSize yet; observing the
+// unknown box would throw, so ask for it only where it exists
+const observerOptions: ResizeObserverOptions =
+	typeof ResizeObserverEntry !== 'undefined' && 'devicePixelContentBoxSize' in ResizeObserverEntry.prototype
+		? {box: 'device-pixel-content-box'}
+		: {}
 
 let resizeObserver: ResizeObserver | null = null
 let rafId = 0
@@ -345,19 +374,18 @@ function paint() {
 	// No 2D context (happy-dom, blocked canvas): labels still render, links don't
 	if (!canvas || !ctx || !frameRef.value) return
 
-	const {cssWidth, cssHeight, dpr} = size.value
-	const scale = cssWidth / scene.value.width // layout units → CSS px
+	const {cssWidth, cssHeight, bitmapWidth, bitmapHeight} = size.value
+	const scale = cssScale.value // layout units → CSS px
+	const dpr = devicePixelScale.value
 	const now = clock()
 
-	// Keep the bitmap at the frame's CSS size × devicePixelRatio (spec A1)
-	const bitmapWidth = Math.round(cssWidth * dpr)
-	const bitmapHeight = Math.round(cssHeight * dpr)
+	// Keep the bitmap at the frame's device-pixel box (spec A1)
 	if (canvas.width !== bitmapWidth || canvas.height !== bitmapHeight) {
 		canvas.width = bitmapWidth
 		canvas.height = bitmapHeight
 	}
 
-	ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+	ctx.setTransform(dpr, 0, 0, bitmapHeight / cssHeight, 0, 0)
 	ctx.clearRect(0, 0, cssWidth, cssHeight)
 
 	// Links: hairlines in layout space; multiply darkens crossings like the
@@ -385,13 +413,21 @@ function paint() {
 	// positions the same elements with CSS.
 	if (mode !== 'html-in-canvas') return
 
+	// Labels live in the canvas grid, so they are drawn in grid pixels under the
+	// identity transform. Scaling the context here would magnify every glyph by
+	// the device pixel ratio; --sc-scale carries that factor into their layout
+	// instead, which keeps them at the SVG's 12 CSS px.
+	ctx.setTransform(1, 0, 0, 1, 0, 0)
 	for (const label of renderedLabels.value) {
 		const el = labelEls.get(label.id)
 		if (!el) continue
-		const x = label.x * scale - (label.anchor === 'end' ? el.offsetWidth : 0)
-		const y = label.y * scale - el.offsetHeight / 2
+		const x = label.x * scale * dpr - (label.anchor === 'end' ? el.offsetWidth : 0)
+		const y = label.y * scale * dpr - el.offsetHeight / 2
 		try {
-			ctx.drawElementImage(el, x, y) // also records hit-test/a11y geometry
+			const transform = ctx.drawElementImage(el, x, y) // also records hit-test/a11y geometry
+			// Park the live element over its painted pixels so pointer hits,
+			// focus and find-in-page land on the glyphs the user sees
+			if (transform) el.style.transform = transform.toString()
 		} catch {
 			// No snapshot yet (first frame) — request one more paint and stop
 			canvas.requestPaint()
@@ -425,13 +461,23 @@ onMounted(() => {
 	}
 	if (canvasRef.value) {
 		resizeObserver = new ResizeObserver((entries) => {
-			const {width, height} = entries[entries.length - 1].contentRect
+			const entry = entries[entries.length - 1]
+			const {width, height} = entry.contentRect
 			// Ignore degenerate observations (hidden frames, no-layout environments)
 			if (width <= 0 || height <= 0) return
-			size.value = {cssWidth: width, cssHeight: height, dpr: window.devicePixelRatio || 1}
+			// The device pixel content box is the exact bitmap the compositor will
+			// show; devicePixelRatio rounding leaves half-pixel blur behind
+			const devicePixelBox = entry.devicePixelContentBoxSize?.[0]
+			const ratio = window.devicePixelRatio || 1
+			size.value = {
+				cssWidth: width,
+				cssHeight: height,
+				bitmapWidth: devicePixelBox?.inlineSize ?? Math.round(width * ratio),
+				bitmapHeight: devicePixelBox?.blockSize ?? Math.round(height * ratio),
+			}
 			schedulePaint()
 		})
-		resizeObserver.observe(canvasRef.value)
+		resizeObserver.observe(canvasRef.value, observerOptions)
 	}
 	// First scene observation is the mount-time join: when the async mount
 	// lost the race to the animation gate (spec V17's animated outcome) the
@@ -460,6 +506,7 @@ onBeforeUnmount(() => {
 			ref="frameRef"
 			class="sc-frame"
 			role="group"
+			:style="frameStyle"
 			:aria-label="`Dependency graph: ${scene.labels.length} nodes, ${scene.links.length} links`"
 		>
 			<canvas ref="canvasRef" class="sc-canvas" :layoutsubtree="mode === 'html-in-canvas' ? '' : undefined">

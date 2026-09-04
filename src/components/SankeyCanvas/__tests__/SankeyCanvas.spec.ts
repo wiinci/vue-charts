@@ -106,6 +106,14 @@ describe('SankeyCanvas (overlay mode — happy-dom has no HTML-in-Canvas API)', 
 		wrapper.unmount()
 	})
 
+	it('publishes the layout-to-CSS scale so labels track the chart like SVG user units', () => {
+		const wrapper = mountCanvas()
+
+		// At the design width the scale is 1, i.e. the SVG's own 12px labels
+		expect(wrapper.find('.sc-frame').attributes('style')).toContain('--sc-scale: 1')
+		wrapper.unmount()
+	})
+
 	it('strokes all 41 links at rest with the shared constants', async () => {
 		const wrapper = mountCanvas()
 		await flushPromises()
@@ -440,6 +448,20 @@ describe('SankeyCanvas (HTML-in-Canvas mode — API stubbed on the prototypes)',
 			expect(Number.isFinite(x)).toBe(true)
 			expect(Number.isFinite(y)).toBe(true)
 		}
+		wrapper.unmount()
+	})
+
+	it('parks each label over its painted pixels with the returned matrix', async () => {
+		recordingCtx.drawElementImage.mockReturnValue({
+			toString: () => 'matrix(1, 0, 0, 1, 5, 7)',
+		} as unknown as DOMMatrix)
+		const wrapper = mountCanvas()
+		await flushPromises()
+
+		wrapper.find('canvas').element.dispatchEvent(new Event('paint'))
+
+		// Hit-testing, focus and find-in-page have to land on the drawn glyphs
+		expect(findLabelEl(wrapper, 'n9::n3').style.transform).toBe('matrix(1, 0, 0, 1, 5, 7)')
 		wrapper.unmount()
 	})
 

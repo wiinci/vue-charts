@@ -47,20 +47,22 @@ const positionStyle = computed(() => {
 /*
  * Mirrors Labels.vue: 12px monospace, black fill, and the 6px white halo. The
  * SVG paints the halo as a 6px stroke under the glyphs (paint-order: stroke);
- * -webkit-text-stroke with paint-order reproduces it on HTML text. The state
- * classes intentionally have no styles of their own — the reference hover DOM
- * diff shows the SVG changes nothing visually on labels.
+ * -webkit-text-stroke with paint-order reproduces it on HTML text. Both are
+ * multiplied by --sc-scale so the labels track the chart the way SVG user
+ * units track the viewBox. The state classes intentionally have no styles of
+ * their own — the reference hover DOM diff shows the SVG changes nothing
+ * visually on labels.
  */
 .sc-label {
 	color: #000;
 	cursor: default;
 	font-family: var(--font-family-monospace);
-	font-size: 12px;
+	font-size: calc(12px * var(--sc-scale, 1));
 	font-weight: 400;
 	line-height: 1;
 	paint-order: stroke fill;
 	white-space: nowrap;
 	width: max-content;
-	-webkit-text-stroke: 6px #fff;
+	-webkit-text-stroke: calc(6px * var(--sc-scale, 1)) #fff;
 }
 </style>
