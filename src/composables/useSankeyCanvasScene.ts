@@ -2,8 +2,17 @@ import {sankeyLinkHorizontal} from 'd3-sankey'
 import {linkHorizontal} from 'd3-shape'
 import {computed, ref, type ComputedRef, type Ref} from 'vue'
 import optimizeSvgPath from '@/utils/optimizeSvgPath'
-import {type SankeyLink, type SankeyNodeDatum, getSankeyNodeKey} from './sankeyModel'
-import {type SankeyLink as SankeyLinkLayout, type SankeyNode, type SankeyProps, useNodesAndLinks} from './useNodesAndLinks'
+import {
+	type SankeyLink,
+	type SankeyNodeDatum,
+	getSankeyNodeKey,
+} from './sankeyModel'
+import {
+	type SankeyLink as SankeyLinkLayout,
+	type SankeyNode,
+	type SankeyProps,
+	useNodesAndLinks,
+} from './useNodesAndLinks'
 import {
 	allIncomingSourcesMatch,
 	createNodeLookup,
@@ -95,12 +104,15 @@ function collectHiddenNodeIds(
 	if (collapsedNodes.size === 0) return hidden
 
 	const isHidden = (node: SankeyNode): boolean =>
-		allIncomingSourcesMatch(node, nodeLookup, (sourceNode) =>
-			collapsedNodes.has(sourceNode.id) || hidden.has(sourceNode.id),
+		allIncomingSourcesMatch(
+			node,
+			nodeLookup,
+			sourceNode =>
+				collapsedNodes.has(sourceNode.id) || hidden.has(sourceNode.id),
 		)
 
 	function dfs(node: SankeyNode) {
-		node.sourceLinks?.forEach((link) => {
+		node.sourceLinks?.forEach(link => {
 			const targetNode = getLinkTargetNode(link, nodeLookup)
 			if (!targetNode || hidden.has(targetNode.id)) return
 			if (isHidden(targetNode)) {
@@ -110,7 +122,7 @@ function collectHiddenNodeIds(
 		})
 	}
 
-	collapsedNodes.forEach((id) => {
+	collapsedNodes.forEach(id => {
 		const root = nodeLookup.get(id)
 		if (root) dfs(root)
 	})
@@ -135,17 +147,18 @@ export function useSankeyCanvasScene(
 		: useCollapsed(nodes, links)
 	const collapsedNodes = collapse.collapsedNodes
 
-	const {sourceIds, targetIds, shouldHighlight, processHoveredNode} = useHighlightLinks(hoveredId, collapsedNodes)
+	const {sourceIds, targetIds, shouldHighlight, processHoveredNode} =
+		useHighlightLinks(hoveredId, collapsedNodes)
 
 	const pathOf = sankeyLinkHorizontal<SankeyNodeDatum, SankeyLink>()
 	// Links.vue:27-36 — linkHorizontal with both generator endpoints at the
 	// source node's [x0, y0]: the flat line every entrance sweep starts from
 	const initialGenerator = linkHorizontal<SankeyLinkLayout, [number, number]>()
-		.source((link) => {
+		.source(link => {
 			const source = link.source as SankeyNode
 			return [source.x0 ?? 0, source.y0 ?? 0]
 		})
-		.target((link) => {
+		.target(link => {
 			const source = link.source as SankeyNode
 			return [source.x0 ?? 0, source.y0 ?? 0]
 		})
@@ -164,65 +177,105 @@ export function useSankeyCanvasScene(
 	// Post-layout filter, exactly like the SVG's collapse: drop links out of
 	// collapsed nodes or touching hidden descendants, drop hidden node labels.
 	// With an empty collapsed set the layout arrays pass through untouched.
-	const hiddenNodeIds = computed(() => collectHiddenNodeIds(collapsedNodes.value, lookup.value))
+	const hiddenNodeIds = computed(() =>
+		collectHiddenNodeIds(collapsedNodes.value, lookup.value),
+	)
 
 	const visibleLinks = computed(() => {
 		if (collapsedNodes.value.size === 0) return links.value
-		return links.value.filter((link) => {
+		return links.value.filter(link => {
 			const sourceId = getLinkSourceId(link)
 			const targetId = getLinkTargetId(link)
 			if (collapsedNodes.value.has(sourceId)) return false
-			if (hiddenNodeIds.value.has(sourceId) || hiddenNodeIds.value.has(targetId)) return false
+			if (
+				hiddenNodeIds.value.has(sourceId) ||
+				hiddenNodeIds.value.has(targetId)
+			)
+				return false
 			return true
 		})
 	})
 
 	const visibleNodes = computed(() => {
 		if (collapsedNodes.value.size === 0) return nodes.value
-		return nodes.value.filter((node) => !hiddenNodeIds.value.has(node.id))
+		return nodes.value.filter(node => !hiddenNodeIds.value.has(node.id))
+	})
+
+	// Geometry is independent of hover, so it is memoized separately: hovering
+	// then only re-derives `emphasized`/`state` instead of regenerating and
+	// re-rounding 41 path strings on every pointer move.
+	const linkGeometry = computed(() =>
+		visibleLinks.value.map((link: SankeyLinkLayout) => ({
+			link,
+			key: `${getLinkSourceId(link)}-${getLinkTargetId(link)}`,
+			// Same 2-decimal rounding the SVG renders (Links.vue)
+			path: optimizeSvgPath(pathOf(link) ?? ''),
+			initialPath: optimizeSvgPath(initialGenerator(link) ?? ''),
+			depth: (link.source as SankeyNode).depth || 0,
+		})),
+	)
+
+	const labelGeometry = computed(() => {
+		// Labels.vue receives the chart width (props minus margins), so the
+		// SVG's anchor midline is chartWidth / 2, not width / 2.
+		const chartMidline =
+			(props.width - props.marginLeft - props.marginRight) / 2
+
+		return visibleNodes.value.map(node => {
+			const key = getSankeyNodeKey(node, props.nodeId)
+			const y = node.y + node.height / 2
+			return {
+				id: key,
+				text: key,
+				x: node.x,
+				y,
+				fx: node.x / props.width,
+				fy: y / props.height,
+				anchor: (node.x < chartMidline ? 'start' : 'end') as 'start' | 'end',
+				// Labels.vue's (d.depth || 0)
+				depth: node.depth || 0,
+			}
+		})
 	})
 
 	const scene = computed<SankeyCanvasScene>(() => {
 		const isHovering = hoveredId.value !== ''
-		const activeIds = new Set([hoveredId.value, ...sourceIds.value, ...targetIds.value])
-		// Labels.vue receives the chart width (props minus margins), so the
-		// SVG's anchor midline is chartWidth / 2, not width / 2.
-		const chartMidline = (props.width - props.marginLeft - props.marginRight) / 2
+		const activeIds = new Set([
+			hoveredId.value,
+			...sourceIds.value,
+			...targetIds.value,
+		])
 
 		return {
 			width: props.width,
 			height: props.height,
 			hoveredId: hoveredId.value,
-			links: visibleLinks.value
-				.map((link: SankeyLinkLayout) => ({
-					key: `${getLinkSourceId(link)}-${getLinkTargetId(link)}`,
-					// Same 2-decimal rounding the SVG renders (Links.vue)
-					path: optimizeSvgPath(pathOf(link) ?? ''),
-					initialPath: optimizeSvgPath(initialGenerator(link) ?? ''),
-					depth: (link.source as SankeyNode).depth || 0,
-					emphasized: shouldHighlight(link, {trueValue: true, falseValue: false}),
+			links: linkGeometry.value
+				.map(({link, ...geometry}) => ({
+					...geometry,
+					emphasized: shouldHighlight(link, {
+						trueValue: true,
+						falseValue: false,
+					}),
 				}))
 				// Stable sort: rest links keep layout order, emphasized go last,
 				// as raising SVG paths to the top does
 				.sort((a, b) => Number(a.emphasized) - Number(b.emphasized)),
-			labels: visibleNodes.value.map((node) => {
-				const key = getSankeyNodeKey(node, props.nodeId)
-				const y = node.y + node.height / 2
-				return {
-					id: key,
-					text: key,
-					x: node.x,
-					y,
-					fx: node.x / props.width,
-					fy: y / props.height,
-					anchor: node.x < chartMidline ? 'start' : 'end',
-					// Labels.vue's (d.depth || 0)
-					depth: node.depth || 0,
-					state: !isHovering ? 'rest' : activeIds.has(key) ? 'active' : 'muted',
-				}
-			}),
+			labels: labelGeometry.value.map(geometry => ({
+				...geometry,
+				state: !isHovering
+					? 'rest'
+					: activeIds.has(geometry.id)
+						? 'active'
+						: 'muted',
+			})),
 		}
 	})
 
-	return {scene, setHovered, clearHovered, toggleCollapse: collapse.toggleCollapse}
+	return {
+		scene,
+		setHovered,
+		clearHovered,
+		toggleCollapse: collapse.toggleCollapse,
+	}
 }

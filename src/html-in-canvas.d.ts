@@ -11,7 +11,13 @@ interface DrawElementImageOptions {
 }
 
 interface CanvasRenderingContext2D {
-	drawElementImage(element: Element, dx: number, dy: number, options?: DrawElementImageOptions): void
+	/** Returns the matrix that maps the element onto its painted pixels */
+	drawElementImage(
+		element: Element,
+		dx: number,
+		dy: number,
+		options?: DrawElementImageOptions,
+	): DOMMatrix | undefined
 }
 
 interface CanvasPaintEvent extends Event {
